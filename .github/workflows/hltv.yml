@@ -1,4 +1,4 @@
-name: HLTV projections (aliases + fuzzy + live HLTV name search)
+name: HLTV projections (explicit player list + fuzzy + live HLTV search)
 on:
   workflow_dispatch:
     inputs:
@@ -32,7 +32,7 @@ jobs:
       - name: Install deps
         run: npm i hltv papaparse
 
-      - name: Build CS2 projections (aliases + fuzzy + HLTV search)
+      - name: Build CS2 projections (ALIASES + fuzzy + HLTV search)
         env:
           UD_CSV_PATH: ${{ inputs.ud_csv_path }}
           LOOKBACK_DAYS: ${{ inputs.lookback_days }}
@@ -51,7 +51,150 @@ jobs:
             .replace(/\s+/g,'')
             .replace(/[^a-z0-9_]/g,'');
 
-          // Walk repo for auto-detecting CSV
+          // ---------- YOUR PLAYER MAP (from your message) ----------
+          const ALIASES = {
+            "adron": /* TODO: HLTV id for ADRON */,
+            "aw": /* TODO: HLTV id for AW */,
+            "artfr0st": /* TODO: HLTV id for ArtFr0st */,
+            "belchonokk": /* TODO: HLTV id for BELCHONOKK */,
+            "batuuu": /* TODO: HLTV id for Batuuu */,
+            "brollan": /* TODO: HLTV id for Brollan */,
+            "clasia": /* TODO: HLTV id for CLASIA */,
+            "cypher": /* TODO: HLTV id for CYPHER */,
+            "callme": /* TODO: HLTV id for Callme */,
+            "chop": /* TODO: HLTV id for Chop */,
+            "chopper": /* TODO: HLTV id for Chopper */,
+            "ciocardau": /* TODO: HLTV id for Ciocardau */,
+            "closer": /* TODO: HLTV id for Closer */,
+            "crunchy": /* TODO: HLTV id for Crunchy */,
+            "cryptic": /* TODO: HLTV id for Cryptic */,
+            "dgl": /* TODO: HLTV id for DGL */,
+            "dengzoe": /* TODO: HLTV id for Dengzoe */,
+            "drox": /* TODO: HLTV id for Drox */,
+            "elfmelk": /* TODO: HLTV id for ELFMELK */,
+            "fallen": /* TODO: HLTV id for FalleN */,
+            "grizz": /* TODO: HLTV id for Grizz */,
+            "heavygod": /* TODO: HLTV id for HeavyGod */,
+            "hext": /* TODO: HLTV id for HexT */,
+            "icarus": /* TODO: HLTV id for Icarus */,
+            "jambo": /* TODO: HLTV id for Jambo */,
+            "jame": /* TODO: HLTV id for Jame */,
+            "jayy2s": /* TODO: HLTV id for Jayy2s */,
+            "jimpphat": /* TODO: HLTV id for Jimpphat */,
+            "johnsm1th": /* TODO: HLTV id for JohnSm1th */,
+            "junior": /* TODO: HLTV id for Junior */,
+            "krimz": /* TODO: HLTV id for KRiMZ */,
+            "kscerato": /* TODO: HLTV id for KSCerato */,
+            "karrigan": 429,  // Karrigan
+            "kiro": /* TODO: HLTV id for Kiro */,
+            "kobe": /* TODO: HLTV id for Kobe */,
+            "kofte": /* TODO: HLTV id for Kofte */,
+            "kusme": /* TODO: HLTV id for KusMe */,
+            "lake": /* TODO: HLTV id for Lake */,
+            "lolsav1or": /* TODO: HLTV id for LoL: Sav1or */,
+            "lolscout": /* TODO: HLTV id for LoL: Scout */,
+            "lolxun": /* TODO: HLTV id for LoL: XUN */,
+            "lolxiaoxu": /* TODO: HLTV id for LoL: Xiaoxu */,
+            "lolzhuo": /* TODO: HLTV id for LoL: Zhuo */,
+            "lolclimber": /* TODO: HLTV id for LoL: climber */,
+            "lolpeyz": /* TODO: HLTV id for LoL: peyz */,
+            "lolsasi": /* TODO: HLTV id for LoL: sasi */,
+            "lolxqw": /* TODO: HLTV id for LoL: xqw */,
+            "lolycx": /* TODO: HLTV id for LoL: ycx */,
+            "matys": /* TODO: HLTV id for MATYS */,
+            "magnojez": /* TODO: HLTV id for Magnojez */,
+            "mihile": /* TODO: HLTV id for Mihile */,
+            "mingovi": /* TODO: HLTV id for Mingovi */,
+            "nathon": /* TODO: HLTV id for Nathon */,
+            "norwi": /* TODO: HLTV id for Norwi */,
+            "p3r3iira": /* TODO: HLTV id for P3R3IIRA */,
+            "peach": /* TODO: HLTV id for Peach */,
+            "rafaxf": /* TODO: HLTV id for Rafaxf */,
+            "re1gn": /* TODO: HLTV id for Re1GN */,
+            "scorth": /* TODO: HLTV id for Scorth */,
+            "scr0b": /* TODO: HLTV id for Scr0b */,
+            "seabraez": /* TODO: HLTV id for SeabraEZ */,
+            "something": /* TODO: HLTV id for Something */,
+            "spinx": 16949,  // Spinx
+            "st0m4k": /* TODO: HLTV id for St0m4k */,
+            "sunpayus": 15858,  // SunPayus
+            "swisher": /* TODO: HLTV id for Swisher */,
+            "toao": /* TODO: HLTV id for TOAO */,
+            "triplus": /* TODO: HLTV id for TRIPLUS */,
+            "toonge": /* TODO: HLTV id for ToongE */,
+            "void": /* TODO: HLTV id for Void */,
+            "walco": /* TODO: HLTV id for Walco */,
+            "wolfy": /* TODO: HLTV id for WolfY */,
+            "x5g7v": /* TODO: HLTV id for X5G7V */,
+            "xielo": /* TODO: HLTV id for XiELO */,
+            "yekindar": /* TODO: HLTV id for YEKINDAR */,
+            "zccnb666": /* TODO: HLTV id for Zccnb666 */,
+            "zest": /* TODO: HLTV id for Zest */,
+            "zont1x": /* TODO: HLTV id for Zont1x */,
+            "zywoo": 11893,  // ZywOo
+            "anber": /* TODO: HLTV id for anber */,
+            "apex": /* TODO: HLTV id for apEX */,
+            "blamef": 15165,  // blameF
+            "bluewh1te": /* TODO: HLTV id for bluewh1te */,
+            "boombl4": /* TODO: HLTV id for boombl4 */,
+            "broky": 16555,  // broky
+            "clax": /* TODO: HLTV id for clax */,
+            "d1ledez": /* TODO: HLTV id for d1Ledez */,
+            "d1maje": /* TODO: HLTV id for d1maje */,
+            "danistzz": /* TODO: HLTV id for danistzz */,
+            "donk": 22729,  // donk
+            "dpr": /* TODO: HLTV id for dpr */,
+            "executor": /* TODO: HLTV id for executor */,
+            "fear": /* TODO: HLTV id for fear */,
+            "flamez": 20102,  // flameZ
+            "flouzer": /* TODO: HLTV id for flouzer */,
+            "fnl": /* TODO: HLTV id for fnl */,
+            "foggers": /* TODO: HLTV id for foggers */,
+            "frozen": 7187,  // frozen
+            "gump": /* TODO: HLTV id for gump */,
+            "hunter": 9647,  // huNter-
+            "jcobbb": /* TODO: HLTV id for jcobbb */,
+            "kairo": /* TODO: HLTV id for kairo */,
+            "kashl1d": /* TODO: HLTV id for kashl1d */,
+            "kinqie": /* TODO: HLTV id for kinqie */,
+            "kritik": /* TODO: HLTV id for kritik */,
+            "laxiee": /* TODO: HLTV id for laxiee */,
+            "m1quse": /* TODO: HLTV id for m1quse */,
+            "malbsmd": /* TODO: HLTV id for malbsMd */,
+            "mezii": /* TODO: HLTV id for mezii */,
+            "molodoy": /* TODO: HLTV id for molodoy */,
+            "monkas": /* TODO: HLTV id for monkaS */,
+            "motm": /* TODO: HLTV id for motm */,
+            "nota": /* TODO: HLTV id for nota */,
+            "patsi": /* TODO: HLTV id for patsi */,
+            "qw1nk1": /* TODO: HLTV id for qw1nk1 */,
+            "r3salt": /* TODO: HLTV id for r3salt */,
+            "ragga": /* TODO: HLTV id for ragga */,
+            "rain": 8183,  // rain
+            "relaxxie": /* TODO: HLTV id for relaxxie */,
+            "rikon": /* TODO: HLTV id for rikon */,
+            "ropz": 11816,  // ropz
+            "s1n": /* TODO: HLTV id for s1n */,
+            "s1ren": /* TODO: HLTV id for s1ren */,
+            "senka": /* TODO: HLTV id for senka */,
+            "sh1ro": /* TODO: HLTV id for sh1ro */,
+            "slaxz": /* TODO: HLTV id for slaxz- */,
+            "spirit": /* TODO: HLTV id for spirit */,
+            "swerzien": /* TODO: HLTV id for swerzieN */,
+            "swetsi": /* TODO: HLTV id for swetsi */,
+            "torzsi": 19619,  // torzsi
+            "tucks": /* TODO: HLTV id for tucks */,
+            "viz": /* TODO: HLTV id for viz */,
+            "xeedo": /* TODO: HLTV id for xeedo */,
+            "xertion": 20424,  // xertioN
+            "yuurih": /* TODO: HLTV id for yuurih */,
+            "z1nny": /* TODO: HLTV id for z1Nny */,
+            "z1k4": /* TODO: HLTV id for z1k4 */,
+            "zune": /* TODO: HLTV id for zune */,
+            "zweih": /* TODO: HLTV id for zweih */
+          };
+
+          // ---------- helpers ----------
           function listFiles(root='.') {
             const out=[];
             function walk(dir, depth=0){
@@ -74,7 +217,6 @@ jobs:
             }
             return null;
           }
-
           const writeCSV = (rows, path) => {
             try { const csv = Papa.unparse(rows || [], { quotes: true }); fs.writeFileSync(path, csv); }
             catch (e) { console.error('writeCSV error for', path, e?.message); try { fs.writeFileSync(path, ''); } catch {} }
@@ -83,14 +225,12 @@ jobs:
             try { const txt = fs.readFileSync(path, 'utf8'); const parsed = Papa.parse(txt, { header: true, skipEmptyLines: true }); return parsed.data || []; }
             catch (e) { console.error('Could not read CSV at', path, e?.message); return []; }
           };
-          async function withRetry(fn, {tries=3, delay=500}={}){ let last; for (let i=0;i<tries;i++){ try { return await fn(); } catch(e){ last=e; await sleep(delay); } } throw last; }
+          async function withRetry(fn, {tries=3, delay=700}={}){ let last; for (let i=0;i<tries;i++){ try { return await fn(); } catch(e){ last=e; await sleep(delay); } } throw last; }
           function erf(x){ const s=x<0?-1:1; x=Math.abs(x);
             const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
             const t=1/(1+p*x); const y=1-(((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t)*Math.exp(-x*x); return s*y; }
           const impliedProb = (d) => (isFinite(d)&&d>0?1/d:0.526);
           const shrink = (rate,n,base,k)=>((n*rate+k*base)/((n+k)||1));
-
-          // Lightweight Levenshtein for fuzzy suggestions
           function lev(a,b){
             a=String(a); b=String(b);
             const m=a.length,n=b.length; if(!m) return n; if(!n) return m;
@@ -104,7 +244,6 @@ jobs:
           }
           const sim=(a,b)=>{const L=Math.max(String(a).length,String(b).length)||1; return 1-(lev(a,b)/L);};
 
-          // Try to extract player id from HLTV HTML by scanning for `/player/<id>/`
           function extractPlayerIdFromHtml(html){
             const re = /\/player\/(\d+)\/[a-z0-9-]+/ig;
             let m; const seen=new Set(); const ids=[];
@@ -112,26 +251,22 @@ jobs:
               if (!seen.has(m[1])) { ids.push(parseInt(m[1],10)); seen.add(m[1]); }
               if (ids.length>=5) break;
             }
-            return ids; // return a few candidates (first will be used)
+            return ids;
           }
-
           async function hltvSearchByName(name){
-            const q = encodeURIComponent(name.trim());
-            // Try stats search first (often lighter)
+            const q = encodeURIComponent(String(name||'').trim());
             const urls = [
               `https://www.hltv.org/stats/players?search=${q}`,
               `https://www.hltv.org/search?query=${q}`
             ];
             for (const url of urls) {
               try {
-                const res = await withRetry(() => fetch(url, { headers: { 'user-agent': UA }}), {tries: 3, delay: 700});
+                const res = await withRetry(() => fetch(url, { headers: { 'user-agent': UA }}), {tries: 3, delay: 900});
                 if (!res.ok) continue;
                 const html = await res.text();
                 const ids = extractPlayerIdFromHtml(html);
                 if (ids && ids.length) return { id: ids[0], candidates: ids };
-              } catch (e) {
-                // ignore and continue
-              }
+              } catch (e) {}
               await sleep(400);
             }
             return { id: null, candidates: [] };
@@ -143,7 +278,7 @@ jobs:
             const THROTTLE_MS  = parseInt(process.env.THROTTLE_MS  ||'350',10);
             const leagueKPR = 0.68, leagueHS = 0.46, EXPECTED_ROUNDS = 50;
 
-            // Resolve CSV path
+            // Resolve CSV
             let csvPath = INPUT_PATH;
             if (!csvPath || !fs.existsSync(csvPath)) {
               const files = listFiles('.');
@@ -168,7 +303,7 @@ jobs:
             const pick = (r,k)=>{ for(const key of k) if (r.hasOwnProperty(key)&&r[key]!=null&&r[key]!=='') return r[key]; return ''; };
 
             const rows = ud.map(r=>{
-              const player = String(pick(r,['player'])).trim(); // source of truth
+              const player = String(pick(r,['player'])).trim();
               const sport  = String(pick(r,['sport_name','sport'])).trim();
               const market = String(pick(r,['market'])).trim();
               let line = pick(r,['line']);
@@ -183,7 +318,7 @@ jobs:
               return { player, sport, market, side, line, dec_odds: isFinite(dec)?dec:1.90 };
             }).filter(x=>x.player && x.market);
 
-            // CS rows only
+            // Keep CS2 props
             const csRows = rows.filter(x=>{
               const isCS = String(x.sport||'').toUpperCase()==='CS' || /kills_on_maps_1_2|headshots_on_maps_1_2/i.test(x.market);
               const m = x.market.toLowerCase();
@@ -197,16 +332,7 @@ jobs:
               return;
             }
 
-            // Load aliases_autogen.js if present
-            let aliases = {};
-            try {
-              aliases = require(process.cwd() + '/aliases_autogen.js');
-              console.log('Loaded aliases_autogen.js with', Object.keys(aliases).length, 'entries.');
-            } catch (e) {
-              console.warn('aliases_autogen.js not found; will rely on fuzzy + live search.');
-            }
-
-            // Hosted directory for fuzzy backbone
+            // Map each unique player name
             let playersDir = [];
             try {
               const res = await withRetry(() => fetch('https://hltv-api.vercel.app/api/players', { headers: { 'user-agent': UA }}));
@@ -225,7 +351,6 @@ jobs:
             });
             const exactIndex = new Map();
             for (const c of pool) if (c.key && c.id && !exactIndex.has(c.key)) exactIndex.set(c.key, c);
-
             function bestCandidates(udName,k=5){
               const key = norm(udName);
               const e = exactIndex.get(key);
@@ -234,25 +359,23 @@ jobs:
                 let score=0;
                 if (c.key.startsWith(key) || key.startsWith(c.key)) score = 0.96;
                 else if (c.key.includes(key) || key.includes(c.key)) score = 0.93;
-                else score = 0.80 * sim(key,c.key);
+                else score = 0.80 * (function sim(a,b){const L=Math.max(String(a).length,String(b).length)||1; return 1-( (function lev(a,b){a=String(a); b=String(b); const m=a.length,n=b.length; if(!m) return n; if(!n) return m; const dp=Array.from({length:m+1},(_,i)=>Array(n+1).fill(0)); for(let i=0;i<=m;i++) dp[i][0]=i; for(let j=0;j<=n;j++) dp[0][j]=j; for(let i=1;i<=m;i++) for(let j=1;j<=n;j++){ const cost=a[i-1]===b[j-1]?0:1; dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+cost);} return dp[m][n]; })(a,b)/L );})(key,c.key);
                 return { id:c.id, nickname:c.shown, score };
               });
               res.sort((a,b)=>b.score-a.score);
               return res.slice(0,k);
             }
 
-            // Map every unique player name → HLTV id using:
-            // aliases → fuzzy local → live HLTV search
             const uniquePlayers = [...new Set(csRows.map(x=>x.player))];
             const mapped=[], unmapped=[];
             for (const udName of uniquePlayers) {
               const key = norm(udName);
 
-              // 1) alias hit?
-              let id = Number.isFinite(+aliases?.[key]) ? +aliases[key] : null;
+              // 1) ALIASES (numbers only)
+              let id = Number.isFinite(+ALIASES[key]) ? +ALIASES[key] : null;
               let source = id ? 'alias' : '';
 
-              // 2) fuzzy local dir
+              // 2) fuzzy
               if (!id) {
                 const cands = bestCandidates(udName, 3);
                 if (cands.length && cands[0].score >= 0.93) {
@@ -263,12 +386,27 @@ jobs:
               // 3) live HLTV search
               if (!id) {
                 try {
-                  const { id: found, candidates } = await hltvSearchByName(udName);
-                  if (found) { id = found; source = 'hltv-search'; }
-                } catch (e) {
-                  // ignore
-                }
-                await sleep(300);
+                  const q = encodeURIComponent(String(udName||'').trim());
+                  const urls = [
+                    `https://www.hltv.org/stats/players?search=${q}`,
+                    `https://www.hltv.org/search?query=${q}`
+                  ];
+                  for (const url of urls) {
+                    const res = await withRetry(() => fetch(url, { headers: { 'user-agent': UA }}), {tries: 3, delay: 900});
+                    if (res.ok) {
+                      const html = await res.text();
+                      const re = /\/player\/(\d+)\/[a-z0-9-]+/ig;
+                      let m; const seen=new Set(); const ids=[];
+                      while ((m = re.exec(html)) !== null) {
+                        if (!seen.has(m[1])) { ids.push(parseInt(m[1],10)); seen.add(m[1]); }
+                        if (ids.length>=5) break;
+                      }
+                      if (ids.length){ id = ids[0]; source='hltv-search'; break; }
+                    }
+                    await sleep(400);
+                  }
+                } catch (e) {}
+                await sleep(isFinite(THROTTLE_MS)?THROTTLE_MS:350);
               }
 
               if (id) mapped.push({ ud_name: udName, hltv_id: id, source });
@@ -283,8 +421,6 @@ jobs:
                   suggestion_5: cands[4]?.nickname || '', suggestion_5_id: cands[4]?.id || '', suggestion_5_score: cands[4]?.score?.toFixed(3) || '',
                 });
               }
-
-              await sleep(isFinite(THROTTLE_MS)?THROTTLE_MS:350);
             }
             writeCSV(mapped, 'hl_players_mapped.csv');
             writeCSV(unmapped, 'hl_players_unmapped.csv');
@@ -302,11 +438,10 @@ jobs:
             const today = new Date();
             const startDate = new Date(today.getTime()-parseInt(process.env.LOOKBACK_DAYS||'60',10)*24*3600*1000).toISOString().slice(0,10);
             const endDate = today.toISOString().slice(0,10);
-
             const stats=[];
             for (const m of withIDs) {
               try{
-                const s = await withRetry(()=>HLTV.getPlayerStats({ id: m.hltv_id, startDate, endDate }), {tries:3, delay:600});
+                const s = await withRetry(()=>HLTV.getPlayerStats({ id: m.hltv_id, startDate, endDate }), {tries:3, delay:700});
                 stats.push({
                   playerId:m.hltv_id,
                   nickname:s?.player?.nickname || m.ud_name,
@@ -342,7 +477,6 @@ jobs:
               const pOver=1-0.5*(1+erf(z/Math.SQRT2));
               return { pOver, pUnder:1-pOver, sigma };
             }
-
             const edges=[];
             for (const u of csRows) {
               const f = pf.get(norm(u.player));
