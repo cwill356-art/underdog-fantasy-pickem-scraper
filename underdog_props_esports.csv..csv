@@ -1,0 +1,625 @@
+player,sport_name,sport_id,market,line,side,american_price,decimal_price,payout_multiplier,selection_header,selection_subheader,updated_at
+donk,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,donk,Higher 41.5 kills on maps 1+2,2025-09-01T02:42:40Z
+donk,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,donk,Lower 41.5 kills on maps 1+2,2025-09-01T02:42:40Z
+donk,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,donk,Higher 23.5 headshots on maps 1+2,2025-09-01T01:44:30Z
+donk,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,donk,Lower 23.5 headshots on maps 1+2,2025-09-01T01:44:30Z
+ZywOo,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,ZywOo,Higher 36.0 kills on maps 1+2,2025-09-01T02:30:16Z
+ZywOo,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,ZywOo,Lower 36.0 kills on maps 1+2,2025-09-01T02:30:16Z
+ZywOo,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,ZywOo,Higher 15.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+ZywOo,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,ZywOo,Lower 15.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+patsi,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, patsi,Higher 28.5 kills on maps 1+2,2025-08-31T23:06:19Z
+patsi,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, patsi,Lower 28.5 kills on maps 1+2,2025-08-31T23:06:19Z
+patsi,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, patsi,Higher 13.5 headshots on maps 1+2,2025-08-31T23:06:19Z
+patsi,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, patsi,Lower 13.5 headshots on maps 1+2,2025-08-31T23:06:19Z
+BELCHONOKK,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,BELCHONOKK,Higher 29.5 kills on maps 1+2,2025-08-31T23:06:07Z
+BELCHONOKK,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,BELCHONOKK,Lower 29.5 kills on maps 1+2,2025-08-31T23:06:07Z
+BELCHONOKK,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,BELCHONOKK,Higher 14.5 headshots on maps 1+2,2025-08-31T23:06:07Z
+BELCHONOKK,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,BELCHONOKK,Lower 14.5 headshots on maps 1+2,2025-08-31T23:06:07Z
+Jame,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Jame,Higher 30.5 kills on maps 1+2,2025-08-31T23:06:07Z
+Jame,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Jame,Lower 30.5 kills on maps 1+2,2025-08-31T23:06:07Z
+Jame,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Jame,Higher 8.0 headshots on maps 1+2,2025-08-31T23:06:07Z
+Jame,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Jame,Lower 8.0 headshots on maps 1+2,2025-08-31T23:06:07Z
+clax,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, clax,Higher 28.5 kills on maps 1+2,2025-08-31T23:06:19Z
+clax,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, clax,Lower 28.5 kills on maps 1+2,2025-08-31T23:06:19Z
+clax,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, clax,Higher 16.5 headshots on maps 1+2,2025-08-31T23:06:19Z
+clax,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, clax,Lower 16.5 headshots on maps 1+2,2025-08-31T23:06:19Z
+torzsi,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,torzsi,Higher 31.0 kills on maps 1+2,2025-09-01T00:30:44Z
+torzsi,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,torzsi,Lower 31.0 kills on maps 1+2,2025-09-01T00:30:44Z
+torzsi,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,torzsi,Higher 10.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+torzsi,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,torzsi,Lower 10.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+z1Nny,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, z1Nny,Higher 29.5 kills on maps 1+2,2025-09-01T02:43:21Z
+z1Nny,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, z1Nny,Lower 29.5 kills on maps 1+2,2025-09-01T02:43:21Z
+z1Nny,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, z1Nny,Higher 16.5 headshots on maps 1+2,2025-08-31T23:28:54Z
+z1Nny,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, z1Nny,Lower 16.5 headshots on maps 1+2,2025-08-31T23:28:54Z
+z1Nny,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, z1Nny,Higher 31.5 kills on maps 1+2,2025-09-01T02:16:06Z
+z1Nny,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, z1Nny,Lower 31.5 kills on maps 1+2,2025-09-01T02:16:06Z
+z1Nny,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, z1Nny,Higher 17.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+z1Nny,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, z1Nny,Lower 17.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+Spinx,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Spinx,Higher 31.5 kills on maps 1+2,2025-08-31T23:06:01Z
+Spinx,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Spinx,Lower 31.5 kills on maps 1+2,2025-08-31T23:06:01Z
+Spinx,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Spinx,Higher 19.0 headshots on maps 1+2,2025-08-31T23:06:01Z
+Spinx,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Spinx,Lower 19.0 headshots on maps 1+2,2025-08-31T23:06:01Z
+XiELO,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, XiELO,Higher 32.5 kills on maps 1+2,2025-09-01T00:29:04Z
+XiELO,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, XiELO,Lower 32.5 kills on maps 1+2,2025-09-01T00:29:04Z
+XiELO,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, XiELO,Higher 18.0 headshots on maps 1+2,2025-08-31T23:06:07Z
+XiELO,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, XiELO,Lower 18.0 headshots on maps 1+2,2025-08-31T23:06:07Z
+jcobbb,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, jcobbb,Higher 27.5 kills on maps 1+2,2025-09-01T00:29:52Z
+jcobbb,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, jcobbb,Lower 27.5 kills on maps 1+2,2025-09-01T00:29:52Z
+jcobbb,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, jcobbb,Higher 19.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+jcobbb,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, jcobbb,Lower 19.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+MATYS,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, MATYS,Higher 28.5 kills on maps 1+2,2025-08-31T23:06:18Z
+MATYS,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, MATYS,Lower 28.5 kills on maps 1+2,2025-08-31T23:06:18Z
+MATYS,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, MATYS,Higher 16.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+MATYS,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, MATYS,Lower 16.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+xertioN,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,xertioN,Higher 31.5 kills on maps 1+2,2025-08-31T23:06:01Z
+xertioN,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,xertioN,Lower 31.5 kills on maps 1+2,2025-08-31T23:06:01Z
+xertioN,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,xertioN,Higher 16.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+xertioN,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,xertioN,Lower 16.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+r3salt,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, r3salt,Higher 30.5 kills on maps 1+2,2025-08-31T23:06:19Z
+r3salt,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, r3salt,Lower 30.5 kills on maps 1+2,2025-08-31T23:06:19Z
+r3salt,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, r3salt,Higher 16.5 headshots on maps 1+2,2025-08-31T23:06:19Z
+r3salt,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, r3salt,Lower 16.5 headshots on maps 1+2,2025-08-31T23:06:19Z
+Jambo,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Jambo,Higher 31.5 kills on maps 1+2,2025-09-01T00:29:37Z
+Jambo,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Jambo,Lower 31.5 kills on maps 1+2,2025-09-01T00:29:37Z
+Jambo,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Jambo,Higher 13.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+Jambo,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Jambo,Lower 13.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+mezii,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,mezii,Higher 15.5 headshots on maps 1+2,2025-09-01T00:30:17Z
+mezii,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,mezii,Lower 15.5 headshots on maps 1+2,2025-09-01T00:30:17Z
+mezii,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,mezii,Higher 26.5 kills on maps 1+2,2025-08-31T14:00:13Z
+mezii,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,mezii,Lower 26.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Brollan,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Brollan,Higher 25.5 kills on maps 1+2,2025-08-31T23:06:01Z
+Brollan,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Brollan,Lower 25.5 kills on maps 1+2,2025-08-31T23:06:01Z
+Brollan,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Brollan,Higher 12.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+Brollan,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Brollan,Lower 12.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+executor,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, executor,Higher 28.5 kills on maps 1+2,2025-08-31T23:06:19Z
+executor,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, executor,Lower 28.5 kills on maps 1+2,2025-08-31T23:06:19Z
+executor,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, executor,Higher 14.5 headshots on maps 1+2,2025-08-31T23:06:19Z
+executor,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, executor,Lower 14.5 headshots on maps 1+2,2025-08-31T23:06:19Z
+executor,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, executor,Higher 28.5 kills on maps 1+2,2025-09-01T02:16:06Z
+executor,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, executor,Lower 28.5 kills on maps 1+2,2025-09-01T02:16:06Z
+executor,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, executor,Higher 14.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+executor,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, executor,Lower 14.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+d1Ledez,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, d1Ledez,Higher 29.5 kills on maps 1+2,2025-08-31T23:06:07Z
+d1Ledez,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, d1Ledez,Lower 29.5 kills on maps 1+2,2025-08-31T23:06:07Z
+d1Ledez,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, d1Ledez,Higher 18.0 headshots on maps 1+2,2025-08-31T23:06:07Z
+d1Ledez,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, d1Ledez,Lower 18.0 headshots on maps 1+2,2025-08-31T23:06:07Z
+sh1ro,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,sh1ro,Higher 33.0 kills on maps 1+2,2025-09-01T02:44:01Z
+sh1ro,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,sh1ro,Lower 33.0 kills on maps 1+2,2025-09-01T02:44:01Z
+sh1ro,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,sh1ro,Higher 10.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+sh1ro,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,sh1ro,Lower 10.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+frozen,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,frozen,Higher 27.5 kills on maps 1+2,2025-08-31T23:08:27Z
+frozen,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,frozen,Lower 27.5 kills on maps 1+2,2025-08-31T23:08:27Z
+frozen,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,frozen,Higher 14.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+frozen,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,frozen,Lower 14.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+molodoy,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, molodoy,Higher 31.0 kills on maps 1+2,2025-09-01T00:29:12Z
+molodoy,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, molodoy,Lower 31.0 kills on maps 1+2,2025-09-01T00:29:12Z
+molodoy,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, molodoy,Higher 11.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+molodoy,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, molodoy,Lower 11.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+malbsMd,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,malbsMd,Higher 27.5 kills on maps 1+2,2025-08-31T23:06:18Z
+malbsMd,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,malbsMd,Lower 27.5 kills on maps 1+2,2025-08-31T23:06:18Z
+malbsMd,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,malbsMd,Higher 17.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+malbsMd,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,malbsMd,Lower 17.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+zweih,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, zweih,Higher 29.5 kills on maps 1+2,2025-08-31T23:06:18Z
+zweih,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, zweih,Lower 29.5 kills on maps 1+2,2025-08-31T23:06:18Z
+zweih,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, zweih,Higher 15.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+zweih,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, zweih,Lower 15.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+flameZ,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,flameZ,Higher 28.0 kills on maps 1+2,2025-08-31T23:29:28Z
+flameZ,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,flameZ,Lower 28.0 kills on maps 1+2,2025-08-31T23:29:28Z
+flameZ,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,flameZ,Higher 15.5 headshots on maps 1+2,2025-09-01T02:43:09Z
+flameZ,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,flameZ,Lower 15.5 headshots on maps 1+2,2025-09-01T02:43:09Z
+Norwi,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Norwi,Higher 25.5 kills on maps 1+2,2025-08-31T23:06:19Z
+Norwi,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Norwi,Lower 25.5 kills on maps 1+2,2025-08-31T23:06:19Z
+Norwi,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Norwi,Higher 11.5 headshots on maps 1+2,2025-08-31T23:28:03Z
+Norwi,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Norwi,Lower 11.5 headshots on maps 1+2,2025-08-31T23:28:03Z
+KSCerato,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,KSCerato,Higher 29.5 kills on maps 1+2,2025-08-31T23:06:01Z
+KSCerato,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,KSCerato,Lower 29.5 kills on maps 1+2,2025-08-31T23:06:01Z
+KSCerato,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,KSCerato,Higher 15.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+KSCerato,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,KSCerato,Lower 15.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+nota,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, nota,Higher 27.5 kills on maps 1+2,2025-08-31T23:06:07Z
+nota,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, nota,Lower 27.5 kills on maps 1+2,2025-08-31T23:06:07Z
+nota,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, nota,Higher 17.0 headshots on maps 1+2,2025-08-31T23:28:27Z
+nota,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, nota,Lower 17.0 headshots on maps 1+2,2025-08-31T23:28:27Z
+bluewh1te,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, bluewh1te,Higher 31.0 kills on maps 1+2,2025-09-01T00:30:00Z
+bluewh1te,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, bluewh1te,Lower 31.0 kills on maps 1+2,2025-09-01T00:30:00Z
+bluewh1te,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, bluewh1te,Higher 16.5 headshots on maps 1+2,2025-08-31T23:06:19Z
+bluewh1te,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, bluewh1te,Lower 16.5 headshots on maps 1+2,2025-08-31T23:06:19Z
+bluewh1te,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, bluewh1te,Higher 31.5 kills on maps 1+2,2025-09-01T02:16:06Z
+bluewh1te,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, bluewh1te,Lower 31.5 kills on maps 1+2,2025-09-01T02:16:06Z
+bluewh1te,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, bluewh1te,Higher 16.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+bluewh1te,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, bluewh1te,Lower 16.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+Kiro,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Kiro,Higher 28.5 kills on maps 1+2,2025-08-31T23:06:19Z
+Kiro,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Kiro,Lower 28.5 kills on maps 1+2,2025-08-31T23:06:19Z
+Kiro,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Kiro,Higher 11.5 headshots on maps 1+2,2025-08-31T23:06:19Z
+Kiro,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Kiro,Lower 11.5 headshots on maps 1+2,2025-08-31T23:06:19Z
+Kiro,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Kiro,Higher 28.5 kills on maps 1+2,2025-09-01T02:16:06Z
+Kiro,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Kiro,Lower 28.5 kills on maps 1+2,2025-09-01T02:16:06Z
+Kiro,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Kiro,Higher 12.0 headshots on maps 1+2,2025-09-01T02:16:06Z
+Kiro,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Kiro,Lower 12.0 headshots on maps 1+2,2025-09-01T02:16:06Z
+Jimpphat,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Jimpphat,Higher 28.5 kills on maps 1+2,2025-08-31T23:06:01Z
+Jimpphat,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Jimpphat,Lower 28.5 kills on maps 1+2,2025-08-31T23:06:01Z
+Jimpphat,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Jimpphat,Higher 14.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+Jimpphat,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Jimpphat,Lower 14.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+HeavyGod,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,HeavyGod,Higher 27.5 kills on maps 1+2,2025-08-31T23:06:18Z
+HeavyGod,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,HeavyGod,Lower 27.5 kills on maps 1+2,2025-08-31T23:06:18Z
+HeavyGod,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,HeavyGod,Higher 14.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+HeavyGod,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,HeavyGod,Lower 14.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+SunPayus,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, SunPayus,Higher 25.5 kills on maps 1+2,2025-08-31T23:06:18Z
+SunPayus,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, SunPayus,Lower 25.5 kills on maps 1+2,2025-08-31T23:06:18Z
+SunPayus,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, SunPayus,Higher 9.0 headshots on maps 1+2,2025-08-31T23:06:18Z
+SunPayus,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, SunPayus,Lower 9.0 headshots on maps 1+2,2025-08-31T23:06:18Z
+FalleN,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,FalleN,Higher 24.5 kills on maps 1+2,2025-08-31T23:06:01Z
+FalleN,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,FalleN,Lower 24.5 kills on maps 1+2,2025-08-31T23:06:01Z
+FalleN,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,FalleN,Higher 13.0 headshots on maps 1+2,2025-08-31T23:06:01Z
+FalleN,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,FalleN,Lower 13.0 headshots on maps 1+2,2025-08-31T23:06:01Z
+kinqie,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, kinqie,Higher 26.5 kills on maps 1+2,2025-09-01T02:16:06Z
+kinqie,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, kinqie,Lower 26.5 kills on maps 1+2,2025-09-01T02:16:06Z
+kinqie,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, kinqie,Higher 13.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+kinqie,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, kinqie,Lower 13.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+kinqie,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, kinqie,Higher 25.5 kills on maps 1+2,2025-08-31T23:06:19Z
+kinqie,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, kinqie,Lower 25.5 kills on maps 1+2,2025-08-31T23:06:19Z
+kinqie,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, kinqie,Higher 13.0 headshots on maps 1+2,2025-08-31T23:06:19Z
+kinqie,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, kinqie,Lower 13.0 headshots on maps 1+2,2025-08-31T23:06:19Z
+Magnojez,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Magnojez,Higher 30.5 kills on maps 1+2,2025-08-31T23:06:07Z
+Magnojez,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Magnojez,Lower 30.5 kills on maps 1+2,2025-08-31T23:06:07Z
+Magnojez,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Magnojez,Higher 16.5 headshots on maps 1+2,2025-08-31T23:06:07Z
+Magnojez,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Magnojez,Lower 16.5 headshots on maps 1+2,2025-08-31T23:06:07Z
+Chopper,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Chopper,Higher 21.5 kills on maps 1+2,2025-08-31T23:06:18Z
+Chopper,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Chopper,Lower 21.5 kills on maps 1+2,2025-08-31T23:06:18Z
+Chopper,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Chopper,Higher 12.0 headshots on maps 1+2,2025-08-31T23:27:36Z
+Chopper,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Chopper,Lower 12.0 headshots on maps 1+2,2025-08-31T23:27:36Z
+Zont1x,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Zont1x,Higher 25.5 kills on maps 1+2,2025-08-31T23:06:18Z
+Zont1x,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Zont1x,Lower 25.5 kills on maps 1+2,2025-08-31T23:06:18Z
+Zont1x,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Zont1x,Higher 10.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+Zont1x,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Zont1x,Lower 10.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+yuurih,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,yuurih,Higher 26.5 kills on maps 1+2,2025-09-01T00:30:30Z
+yuurih,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,yuurih,Lower 26.5 kills on maps 1+2,2025-09-01T00:30:30Z
+yuurih,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,yuurih,Higher 13.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+yuurih,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,yuurih,Lower 13.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+AW,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, AW,Higher 28.5 kills on maps 1+2,2025-08-31T23:06:07Z
+AW,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, AW,Lower 28.5 kills on maps 1+2,2025-08-31T23:06:07Z
+AW,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, AW,Higher 14.5 headshots on maps 1+2,2025-08-31T23:06:07Z
+AW,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, AW,Lower 14.5 headshots on maps 1+2,2025-08-31T23:06:07Z
+broky,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,broky,Higher 27.0 kills on maps 1+2,2025-08-31T23:27:18Z
+broky,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,broky,Lower 27.0 kills on maps 1+2,2025-08-31T23:27:18Z
+broky,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,broky,Higher 9.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+broky,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,broky,Lower 9.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+s1ren,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,s1ren,Higher 27.5 kills on maps 1+2,2025-09-01T01:40:37Z
+s1ren,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,s1ren,Lower 27.5 kills on maps 1+2,2025-09-01T01:40:37Z
+s1ren,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,s1ren,Higher 15.5 headshots on maps 1+2,2025-08-31T23:06:07Z
+s1ren,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,s1ren,Lower 15.5 headshots on maps 1+2,2025-08-31T23:06:07Z
+danistzz,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, danistzz,Higher 31.5 kills on maps 1+2,2025-09-01T02:51:22Z
+danistzz,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, danistzz,Lower 31.5 kills on maps 1+2,2025-09-01T02:51:22Z
+danistzz,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, danistzz,Higher 14.5 headshots on maps 1+2,2025-08-31T23:29:02Z
+danistzz,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, danistzz,Lower 14.5 headshots on maps 1+2,2025-08-31T23:29:02Z
+Karrigan,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Karrigan,Higher 11.5 headshots on maps 1+2,2025-08-31T23:29:38Z
+Karrigan,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Karrigan,Lower 11.5 headshots on maps 1+2,2025-08-31T23:29:38Z
+Karrigan,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Karrigan,Higher 22.0 kills on maps 1+2,2025-08-31T14:00:13Z
+Karrigan,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Karrigan,Lower 22.0 kills on maps 1+2,2025-08-31T14:00:13Z
+YEKINDAR,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, YEKINDAR,Higher 27.5 kills on maps 1+2,2025-08-31T23:06:01Z
+YEKINDAR,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, YEKINDAR,Lower 27.5 kills on maps 1+2,2025-08-31T23:06:01Z
+YEKINDAR,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, YEKINDAR,Higher 17.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+YEKINDAR,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, YEKINDAR,Lower 17.5 headshots on maps 1+2,2025-08-31T23:06:01Z
+ragga,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, ragga,Higher 26.5 kills on maps 1+2,2025-09-01T02:16:06Z
+ragga,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, ragga,Lower 26.5 kills on maps 1+2,2025-09-01T02:16:06Z
+ragga,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, ragga,Higher 13.0 headshots on maps 1+2,2025-09-01T02:16:06Z
+ragga,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, ragga,Lower 13.0 headshots on maps 1+2,2025-09-01T02:16:06Z
+ArtFr0st,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, ArtFr0st,Higher 31.5 kills on maps 1+2,2025-08-31T23:06:07Z
+ArtFr0st,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, ArtFr0st,Lower 31.5 kills on maps 1+2,2025-08-31T23:06:07Z
+ArtFr0st,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, ArtFr0st,Higher 8.5 headshots on maps 1+2,2025-08-31T23:06:07Z
+ArtFr0st,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, ArtFr0st,Lower 8.5 headshots on maps 1+2,2025-08-31T23:06:07Z
+KRiMZ,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,KRiMZ,Higher 26.5 kills on maps 1+2,2025-08-31T23:26:20Z
+KRiMZ,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,KRiMZ,Lower 26.5 kills on maps 1+2,2025-08-31T23:26:20Z
+KRiMZ,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,KRiMZ,Higher 11.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+KRiMZ,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,KRiMZ,Lower 11.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+dpr,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, dpr,Higher 30.5 kills on maps 1+2,2025-09-01T01:19:45Z
+dpr,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, dpr,Lower 30.5 kills on maps 1+2,2025-09-01T01:19:45Z
+dpr,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, dpr,Higher 14.5 headshots on maps 1+2,2025-09-01T01:19:45Z
+dpr,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, dpr,Lower 14.5 headshots on maps 1+2,2025-09-01T01:19:45Z
+xeedo,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,xeedo,Higher 14.5 headshots on maps 1+2,2025-09-01T02:43:01Z
+xeedo,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,xeedo,Lower 14.5 headshots on maps 1+2,2025-09-01T02:43:01Z
+xeedo,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,xeedo,Higher 30.5 kills on maps 1+2,2025-08-31T22:41:12Z
+xeedo,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,xeedo,Lower 30.5 kills on maps 1+2,2025-08-31T22:41:12Z
+WolfY,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, WolfY,Higher 28.5 kills on maps 1+2,2025-08-31T23:27:55Z
+WolfY,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, WolfY,Lower 28.5 kills on maps 1+2,2025-08-31T23:27:55Z
+WolfY,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, WolfY,Higher 11.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+WolfY,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, WolfY,Lower 11.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+boombl4,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, boombl4,Higher 25.5 kills on maps 1+2,2025-08-31T23:06:07Z
+boombl4,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, boombl4,Lower 25.5 kills on maps 1+2,2025-08-31T23:06:07Z
+boombl4,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, boombl4,Higher 10.0 headshots on maps 1+2,2025-08-31T23:06:07Z
+boombl4,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, boombl4,Lower 10.0 headshots on maps 1+2,2025-08-31T23:06:07Z
+Scr0b,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Scr0b,Higher 32.0 kills on maps 1+2,2025-09-01T02:44:15Z
+Scr0b,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Scr0b,Lower 32.0 kills on maps 1+2,2025-09-01T02:44:15Z
+Scr0b,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Scr0b,Higher 12.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+Scr0b,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Scr0b,Lower 12.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+gump,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, gump,Higher 30.0 kills on maps 1+2,2025-09-01T00:31:11Z
+gump,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, gump,Lower 30.0 kills on maps 1+2,2025-09-01T00:31:11Z
+gump,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, gump,Higher 16.0 headshots on maps 1+2,2025-09-01T02:19:07Z
+gump,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, gump,Lower 16.0 headshots on maps 1+2,2025-09-01T02:19:07Z
+Drox,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Drox,Higher 32.5 kills on maps 1+2,2025-09-01T01:19:45Z
+Drox,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Drox,Lower 32.5 kills on maps 1+2,2025-09-01T01:19:45Z
+Drox,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Drox,Higher 21.5 headshots on maps 1+2,2025-09-01T01:19:45Z
+Drox,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Drox,Lower 21.5 headshots on maps 1+2,2025-09-01T01:19:45Z
+ADRON,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, ADRON,Higher 25.5 kills on maps 1+2,2025-09-01T02:16:06Z
+ADRON,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, ADRON,Lower 25.5 kills on maps 1+2,2025-09-01T02:16:06Z
+ADRON,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, ADRON,Higher 13.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+ADRON,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, ADRON,Lower 13.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+Mingovi,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Mingovi,Higher 26.5 kills on maps 1+2,2025-09-01T01:19:45Z
+Mingovi,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Mingovi,Lower 26.5 kills on maps 1+2,2025-09-01T01:19:45Z
+Mingovi,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Mingovi,Higher 11.0 headshots on maps 1+2,2025-09-01T01:19:45Z
+Mingovi,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Mingovi,Lower 11.0 headshots on maps 1+2,2025-09-01T01:19:45Z
+foggers,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, foggers,Higher 29.5 kills on maps 1+2,2025-08-31T23:28:46Z
+foggers,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, foggers,Lower 29.5 kills on maps 1+2,2025-08-31T23:28:46Z
+foggers,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, foggers,Higher 16.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+foggers,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, foggers,Lower 16.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+Crunchy,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Crunchy,Higher 30.5 kills on maps 1+2,2025-09-01T01:19:45Z
+Crunchy,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Crunchy,Lower 30.5 kills on maps 1+2,2025-09-01T01:19:45Z
+Crunchy,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Crunchy,Higher 18.5 headshots on maps 1+2,2025-09-01T01:19:45Z
+Crunchy,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Crunchy,Lower 18.5 headshots on maps 1+2,2025-09-01T01:19:45Z
+Re1GN,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Re1GN,Higher 30.5 kills on maps 1+2,2025-08-31T23:28:35Z
+Re1GN,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Re1GN,Lower 30.5 kills on maps 1+2,2025-08-31T23:28:35Z
+Re1GN,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Re1GN,Higher 17.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+Re1GN,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Re1GN,Lower 17.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+Jayy2s,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Jayy2s,Higher 28.5 kills on maps 1+2,2025-09-01T02:15:04Z
+Jayy2s,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Jayy2s,Lower 28.5 kills on maps 1+2,2025-09-01T02:15:04Z
+Jayy2s,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Jayy2s,Higher 17.0 headshots on maps 1+2,2025-08-31T18:44:35Z
+Jayy2s,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Jayy2s,Lower 17.0 headshots on maps 1+2,2025-08-31T18:44:35Z
+d1maje,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, d1maje,Higher 30.5 kills on maps 1+2,2025-09-01T02:16:06Z
+d1maje,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, d1maje,Lower 30.5 kills on maps 1+2,2025-09-01T02:16:06Z
+d1maje,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, d1maje,Higher 18.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+d1maje,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, d1maje,Lower 18.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+ELFMELK,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, ELFMELK,Higher 30.5 kills on maps 1+2,2025-09-01T01:19:45Z
+ELFMELK,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, ELFMELK,Lower 30.5 kills on maps 1+2,2025-09-01T01:19:45Z
+ELFMELK,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, ELFMELK,Higher 19.5 headshots on maps 1+2,2025-09-01T01:19:45Z
+ELFMELK,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, ELFMELK,Lower 19.5 headshots on maps 1+2,2025-09-01T01:19:45Z
+Nathon,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Nathon,Higher 26.5 kills on maps 1+2,2025-09-01T01:19:45Z
+Nathon,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Nathon,Lower 26.5 kills on maps 1+2,2025-09-01T01:19:45Z
+Nathon,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Nathon,Higher 12.0 headshots on maps 1+2,2025-09-01T01:19:45Z
+Nathon,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Nathon,Lower 12.0 headshots on maps 1+2,2025-09-01T01:19:45Z
+Rafaxf,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Rafaxf,Higher 30.5 kills on maps 1+2,2025-09-01T02:19:37Z
+Rafaxf,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Rafaxf,Lower 30.5 kills on maps 1+2,2025-09-01T02:19:37Z
+Rafaxf,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Rafaxf,Higher 11.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+Rafaxf,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Rafaxf,Lower 11.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+Ciocardau,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Ciocardau,Higher 27.5 kills on maps 1+2,2025-09-01T02:16:06Z
+Ciocardau,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Ciocardau,Lower 27.5 kills on maps 1+2,2025-09-01T02:16:06Z
+Ciocardau,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Ciocardau,Higher 14.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+Ciocardau,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Ciocardau,Lower 14.5 headshots on maps 1+2,2025-09-01T02:16:06Z
+huNter-,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,huNter-,Higher 25.5 kills on maps 1+2,2025-08-31T23:06:18Z
+huNter-,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,huNter-,Lower 25.5 kills on maps 1+2,2025-08-31T23:06:18Z
+huNter-,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,huNter-,Higher 12.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+huNter-,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,huNter-,Lower 12.5 headshots on maps 1+2,2025-08-31T23:06:18Z
+kritik,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, kritik,Higher 28.5 kills on maps 1+2,2025-09-01T02:16:06Z
+kritik,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, kritik,Lower 28.5 kills on maps 1+2,2025-09-01T02:16:06Z
+kritik,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, kritik,Higher 14.0 headshots on maps 1+2,2025-09-01T02:16:06Z
+kritik,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, kritik,Lower 14.0 headshots on maps 1+2,2025-09-01T02:16:06Z
+Zccnb666,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Zccnb666,Higher 28.5 kills on maps 1+2,2025-09-01T01:19:45Z
+Zccnb666,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Zccnb666,Lower 28.5 kills on maps 1+2,2025-09-01T01:19:45Z
+Zccnb666,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Zccnb666,Higher 15.5 headshots on maps 1+2,2025-09-01T01:19:45Z
+Zccnb666,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Zccnb666,Lower 15.5 headshots on maps 1+2,2025-09-01T01:19:45Z
+TRIPLUS,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, TRIPLUS,Higher 13.0 headshots on maps 1+2,2025-09-01T02:42:53Z
+TRIPLUS,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, TRIPLUS,Lower 13.0 headshots on maps 1+2,2025-09-01T02:42:53Z
+TRIPLUS,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, TRIPLUS,Higher 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+TRIPLUS,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, TRIPLUS,Lower 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+Peach,LOL,LOL,kills_on_maps_1_2_3,,over,-112.0,1.9,1.0,Peach,Higher 8.5 kills on maps 1+2+3,2025-09-01T00:04:05Z
+Peach,LOL,LOL,kills_on_maps_1_2_3,,under,-112.0,1.9,1.0,Peach,Lower 8.5 kills on maps 1+2+3,2025-09-01T00:04:05Z
+monkaS,LOL,LOL,kills_on_maps_1_2_3,,over,120.0,2.2,1.05, monkaS,Higher 2.5 kills on maps 1+2+3,2025-08-30T10:52:08Z
+Batuuu,LOL,LOL,kills_on_maps_1_2_3,,over,122.0,2.22,1.06,Batuuu,Higher 3.5 kills on maps 1+2+3,2025-08-30T10:52:08Z
+Scorth,LOL,LOL,kills_on_maps_1_2_3,,over,-112.0,1.9,1.0,Scorth,Higher 16.5 kills on maps 1+2+3,2025-09-01T01:07:21Z
+Scorth,LOL,LOL,kills_on_maps_1_2_3,,under,-112.0,1.9,1.0,Scorth,Lower 16.5 kills on maps 1+2+3,2025-09-01T01:07:21Z
+Callme,LOL,LOL,kills_on_maps_1_2_3,,over,-118.0,1.85,1.0,Callme,Higher 10.5 kills on maps 1+2+3,2025-08-30T10:52:08Z
+Callme,LOL,LOL,kills_on_maps_1_2_3,,under,-105.0,1.96,1.0,Callme,Lower 10.5 kills on maps 1+2+3,2025-08-30T10:52:08Z
+Mihile,LOL,LOL,kills_on_maps_1_2_3,,over,-112.0,1.9,1.0,Mihile,Higher 10.5 kills on maps 1+2+3,2025-09-01T01:44:53Z
+Mihile,LOL,LOL,kills_on_maps_1_2_3,,under,-112.0,1.9,1.0,Mihile,Lower 10.5 kills on maps 1+2+3,2025-09-01T01:44:53Z
+ToongE,LOL,LOL,kills_on_maps_1_2_3,,over,-108.0,1.93,1.0,ToongE,Higher 14.5 kills on maps 1+2+3,2025-08-31T22:47:38Z
+ToongE,LOL,LOL,kills_on_maps_1_2_3,,under,-114.0,1.88,1.0,ToongE,Lower 14.5 kills on maps 1+2+3,2025-08-31T22:47:38Z
+Zest,LOL,LOL,kills_on_maps_1_2_3,,over,-103.0,1.98,1.0,Zest,Higher 10.5 kills on maps 1+2+3,2025-08-30T10:52:08Z
+Zest,LOL,LOL,kills_on_maps_1_2_3,,under,-121.0,1.83,1.0,Zest,Lower 10.5 kills on maps 1+2+3,2025-08-30T10:52:08Z
+Kofte,LOL,LOL,kills_on_maps_1_2_3,,over,-115.0,1.87,1.0,Kofte,Higher 10.5 kills on maps 1+2+3,2025-08-30T10:52:08Z
+Kofte,LOL,LOL,kills_on_maps_1_2_3,,under,-107.0,1.94,1.0,Kofte,Lower 10.5 kills on maps 1+2+3,2025-08-30T10:52:08Z
+Closer,LOL,LOL,kills_on_maps_1_2_3,,over,-112.0,1.9,1.0,Closer,Higher 10.5 kills on maps 1+2+3,2025-08-31T23:11:35Z
+Closer,LOL,LOL,kills_on_maps_1_2_3,,under,-112.0,1.9,1.0,Closer,Lower 10.5 kills on maps 1+2+3,2025-08-31T23:11:35Z
+LoL: Hanbyeol,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,104.0,2.04,1.03,LoL: Hanbyeol,Higher 9.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Hanbyeol,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-127.0,1.79,0.89,LoL: Hanbyeol,Lower 9.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Kangin,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-124.0,1.81,1.0,LoL: Kangin,Higher 7.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Kangin,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,101.0,2.01,1.0,LoL: Kangin,Lower 7.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: 1Jiang,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-109.0,1.92,1.0,LoL: 1Jiang,Higher 6.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: 1Jiang,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-113.0,1.89,1.0,LoL: 1Jiang,Lower 6.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: 1Jiang,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-109.0,1.92,1.0,LoL: 1Jiang,Higher 11.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: 1Jiang,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-113.0,1.89,1.0,LoL: 1Jiang,Lower 11.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Lancer,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-129.0,1.78,0.88,LoL: Lancer,Higher 8.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Lancer,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,105.0,2.05,1.04,LoL: Lancer,Lower 8.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: sasi,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,over,-112.0,1.9,1.0,LoL: sasi,Higher 6.5 kills on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: sasi,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,under,-110.0,1.91,1.0,LoL: sasi,Lower 6.5 kills on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: sasi,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-112.0,1.9,1.0,LoL: sasi,Higher 12.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: sasi,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-110.0,1.91,1.0,LoL: sasi,Lower 12.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Xiaoxu,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,over,-115.0,1.87,1.0,LoL: Xiaoxu,Higher 9.5 kills on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Xiaoxu,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,under,-107.0,1.94,1.0,LoL: Xiaoxu,Lower 9.5 kills on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Xiaoxu,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-118.0,1.85,1.0,LoL: Xiaoxu,Higher 19.5 assists on maps 1+2+3,2025-09-01T00:03:49Z
+LoL: Xiaoxu,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-105.0,1.96,1.0,LoL: Xiaoxu,Lower 19.5 assists on maps 1+2+3,2025-09-01T00:03:49Z
+LoL: DDoiV,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-112.0,1.9,1.0,LoL: DDoiV,Higher 8.5 kills in maps 1+2+3,2025-09-01T00:04:46Z
+LoL: DDoiV,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-112.0,1.9,1.0,LoL: DDoiV,Lower 8.5 kills in maps 1+2+3,2025-09-01T00:04:46Z
+LoL: Junhao,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,106.0,2.06,1.04,LoL: Junhao,Higher 7.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Junhao,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-130.0,1.77,0.88,LoL: Junhao,Lower 7.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Junhao,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-107.0,1.94,1.0,LoL: Junhao,Higher 16.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Junhao,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-115.0,1.87,1.0,LoL: Junhao,Lower 16.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Tian,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-112.0,1.9,1.0,LoL: Tian,Higher 14.5 kills in maps 1+2+3,2025-09-01T01:58:24Z
+LoL: Tian,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-112.0,1.9,1.0,LoL: Tian,Lower 14.5 kills in maps 1+2+3,2025-09-01T01:58:24Z
+LoL: Tian,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-112.0,1.9,1.0,LoL: Tian,Higher 28.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Tian,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-110.0,1.91,1.0,LoL: Tian,Lower 28.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Sylvie,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-109.0,1.92,1.0,LoL: Sylvie,Higher 8.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Sylvie,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-113.0,1.89,1.0,LoL: Sylvie,Lower 8.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Grizzly,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-186.0,1.54,0.78,LoL: Grizzly,Higher 10.5 kills in maps 1+2+3,2025-09-01T02:28:17Z
+LoL: Grizzly,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,149.0,2.49,1.13,LoL: Grizzly,Lower 10.5 kills in maps 1+2+3,2025-09-01T02:28:17Z
+LoL: climber,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,over,-102.0,1.99,1.0,LoL: climber,Higher 7.5 kills on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: climber,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,under,-122.0,1.82,1.0,LoL: climber,Lower 7.5 kills on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: climber,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-105.0,1.96,1.0,LoL: climber,Higher 18.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: climber,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-118.0,1.85,1.0,LoL: climber,Lower 18.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: XUN,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,over,-148.0,1.68,0.85,LoL: XUN,Higher 10.5 kills on maps 1+2+3,2025-08-31T01:51:54Z
+LoL: XUN,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,under,120.0,2.2,1.05,LoL: XUN,Lower 10.5 kills on maps 1+2+3,2025-08-31T01:51:54Z
+LoL: XUN,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-104.0,1.97,1.0,LoL: XUN,Higher 27.5 assists on maps 1+2+3,2025-09-01T02:56:18Z
+LoL: XUN,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-120.0,1.84,1.0,LoL: XUN,Lower 27.5 assists on maps 1+2+3,2025-09-01T02:56:18Z
+LoL: Saber,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-132.0,1.76,0.87,LoL: Saber,Higher 6.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Saber,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,107.0,2.07,1.05,LoL: Saber,Lower 6.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Saber,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-107.0,1.94,1.0,LoL: Saber,Higher 14.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Saber,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-115.0,1.87,1.0,LoL: Saber,Lower 14.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Kemish,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-105.0,1.96,1.0,LoL: Kemish,Higher 10.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Kemish,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-117.0,1.86,1.0,LoL: Kemish,Lower 10.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Pungyeon,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-113.0,1.89,1.0,LoL: Pungyeon,Higher 10.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Pungyeon,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-109.0,1.92,1.0,LoL: Pungyeon,Lower 10.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Scout,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,over,-139.0,1.72,0.85,LoL: Scout,Higher 11.5 kills on maps 1+2+3,2025-09-01T00:09:15Z
+LoL: Scout,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,under,113.0,2.13,1.08,LoL: Scout,Lower 11.5 kills on maps 1+2+3,2025-09-01T00:09:15Z
+LoL: Scout,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-107.0,1.94,1.0,LoL: Scout,Higher 24.5 assists on maps 1+2+3,2025-08-31T13:23:06Z
+LoL: Scout,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-115.0,1.87,1.0,LoL: Scout,Lower 24.5 assists on maps 1+2+3,2025-08-31T13:23:06Z
+LoL: About,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-159.0,1.63,0.82,LoL: About,Higher 16.5 kills in maps 1+2+3,2025-09-01T00:08:23Z
+LoL: About,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,128.0,2.28,1.09,LoL: About,Lower 16.5 kills in maps 1+2+3,2025-09-01T00:08:23Z
+LoL: Slayer,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-159.0,1.63,0.82,LoL: Slayer,Higher 14.5 kills in maps 1+2+3,2025-09-01T00:04:32Z
+LoL: Slayer,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,128.0,2.28,1.09,LoL: Slayer,Lower 14.5 kills in maps 1+2+3,2025-09-01T00:04:32Z
+LoL: Sav1or,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,over,101.0,2.01,1.0,LoL: Sav1or,Higher 10.5 kills on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Sav1or,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,under,-124.0,1.81,1.0,LoL: Sav1or,Lower 10.5 kills on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Sav1or,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-102.0,1.99,1.0,LoL: Sav1or,Higher 14.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Sav1or,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-122.0,1.82,1.0,LoL: Sav1or,Lower 14.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: peyz,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,over,-112.0,1.9,1.0,LoL: peyz,Higher 17.5 kills on maps 1+2+3,2025-08-31T23:02:18Z
+LoL: peyz,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,under,-112.0,1.9,1.0,LoL: peyz,Lower 17.5 kills on maps 1+2+3,2025-08-31T23:02:18Z
+LoL: peyz,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-115.0,1.87,1.0,LoL: peyz,Higher 20.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: peyz,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-107.0,1.94,1.0,LoL: peyz,Lower 20.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: NamGung,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-117.0,1.86,0.98,LoL: NamGung,Higher 2.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Crisp,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-102.0,1.99,1.05,LoL: Crisp,Higher 2.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Crisp,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-117.0,1.86,1.0,LoL: Crisp,Higher 39.5 assists on maps 1+2+3,2025-08-31T18:52:12Z
+LoL: Crisp,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-106.0,1.95,1.0,LoL: Crisp,Lower 39.5 assists on maps 1+2+3,2025-08-31T18:52:12Z
+LoL: Minous,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-139.0,1.72,0.85,LoL: Minous,Higher 2.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: ycx,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,over,117.0,2.17,1.1,LoL: ycx,Higher 2.5 kills on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: ycx,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-112.0,1.9,1.0,LoL: ycx,Higher 26.5 assists on maps 1+2+3,2025-09-01T00:08:47Z
+LoL: ycx,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-112.0,1.9,1.0,LoL: ycx,Lower 26.5 assists on maps 1+2+3,2025-09-01T00:08:47Z
+LoL: Zhuo,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,over,103.0,2.03,1.03,LoL: Zhuo,Higher 2.5 kills on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Zhuo,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-117.0,1.86,1.0,LoL: Zhuo,Higher 36.5 assists on maps 1+2+3,2025-08-30T22:40:19Z
+LoL: Zhuo,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-106.0,1.95,1.0,LoL: Zhuo,Lower 36.5 assists on maps 1+2+3,2025-08-30T22:40:19Z
+LoL: Breathe,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-102.0,1.99,1.0,LoL: Breathe,Higher 10.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Breathe,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-122.0,1.82,1.0,LoL: Breathe,Lower 10.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Breathe,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-121.0,1.83,1.0,LoL: Breathe,Higher 20.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Breathe,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-102.0,1.99,1.0,LoL: Breathe,Lower 20.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Winner,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-139.0,1.72,0.85,LoL: Winner,Higher 12.5 kills in maps 1+2+3,2025-09-01T02:54:55Z
+LoL: Winner,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,113.0,2.13,1.08,LoL: Winner,Lower 12.5 kills in maps 1+2+3,2025-09-01T02:54:55Z
+LoL: Tempester,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-117.0,1.86,1.0,LoL: Tempester,Higher 8.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Tempester,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-106.0,1.95,1.0,LoL: Tempester,Lower 8.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Fisher,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-113.0,1.89,1.0,LoL: Fisher,Higher 10.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Fisher,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-109.0,1.92,1.0,LoL: Fisher,Lower 10.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Xiaohu,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-104.0,1.97,1.0,LoL: Xiaohu,Higher 12.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Xiaohu,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-120.0,1.84,1.0,LoL: Xiaohu,Lower 12.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Xiaohu,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-108.0,1.93,1.0,LoL: Xiaohu,Higher 27.5 assists on maps 1+2+3,2025-08-31T20:32:01Z
+LoL: Xiaohu,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-114.0,1.88,1.0,LoL: Xiaohu,Lower 27.5 assists on maps 1+2+3,2025-08-31T20:32:01Z
+LoL: Baiye,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-159.0,1.63,0.82,LoL: Baiye,Higher 8.5 kills in maps 1+2+3,2025-08-31T23:02:06Z
+LoL: Baiye,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,128.0,2.28,1.09,LoL: Baiye,Lower 8.5 kills in maps 1+2+3,2025-08-31T23:02:06Z
+LoL: Baiye,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-109.0,1.92,1.0,LoL: Baiye,Higher 12.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Baiye,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-113.0,1.89,1.0,LoL: Baiye,Lower 12.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: xqw,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,over,-129.0,1.78,0.88,LoL: xqw,Higher 6.5 kills on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: xqw,ESPORTS,ESPORTS,kills_on_maps_1_2_3,,under,105.0,2.05,1.04,LoL: xqw,Lower 6.5 kills on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: xqw,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-107.0,1.94,1.0,LoL: xqw,Higher 17.5 assists on maps 1+2+3,2025-09-01T02:42:21Z
+LoL: xqw,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-115.0,1.87,1.0,LoL: xqw,Lower 17.5 assists on maps 1+2+3,2025-09-01T02:42:21Z
+LoL: Xiaoxia,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-143.0,1.7,0.84,LoL: Xiaoxia,Higher 1.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Xiaoxia,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-105.0,1.96,1.0,LoL: Xiaoxia,Higher 23.5 assists on maps 1+2+3,2025-08-31T20:29:50Z
+LoL: Xiaoxia,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-118.0,1.85,1.0,LoL: Xiaoxia,Lower 23.5 assists on maps 1+2+3,2025-08-31T20:29:50Z
+LoL: Crack,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,112.0,2.12,1.08,LoL: Crack,Higher 2.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Bluffing,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-124.0,1.81,0.95,LoL: Bluffing,Higher 1.5 kills in maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Trigger,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-159.0,1.63,0.82,LoL: Trigger,Higher 13.5 kills in maps 1+2+3,2025-09-01T00:11:21Z
+LoL: Trigger,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,128.0,2.28,1.09,LoL: Trigger,Lower 13.5 kills in maps 1+2+3,2025-09-01T00:11:21Z
+LoL: Pyeonsik,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-112.0,1.9,1.0,LoL: Pyeonsik,Higher 14.5 kills in maps 1+2+3,2025-09-01T02:14:54Z
+LoL: Pyeonsik,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,-112.0,1.9,1.0,LoL: Pyeonsik,Lower 14.5 kills in maps 1+2+3,2025-09-01T02:14:54Z
+LoL: Light,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,over,-159.0,1.63,0.82,LoL: Light,Higher 16.5 kills in maps 1+2+3,2025-08-31T18:54:17Z
+LoL: Light,ESPORTS,ESPORTS,kills_in_maps_1_2_3,,under,128.0,2.28,1.09,LoL: Light,Lower 16.5 kills in maps 1+2+3,2025-08-31T18:54:17Z
+LoL: Light,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,over,-105.0,1.96,1.0,LoL: Light,Higher 21.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+LoL: Light,ESPORTS,ESPORTS,assists_on_maps_1_2_3,,under,-118.0,1.85,1.0,LoL: Light,Lower 21.5 assists on maps 1+2+3,2025-08-30T10:52:00Z
+ropz,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,ropz,Higher 31.0 kills on maps 1+2,2025-08-31T20:27:47Z
+ropz,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,ropz,Lower 31.0 kills on maps 1+2,2025-08-31T20:27:47Z
+ropz,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,ropz,Higher 15.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+ropz,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,ropz,Lower 15.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+blameF,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,blameF,Higher 34.5 kills on maps 1+2,2025-08-31T21:45:04Z
+blameF,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,blameF,Lower 34.5 kills on maps 1+2,2025-08-31T21:45:04Z
+blameF,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,blameF,Higher 15.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+blameF,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,blameF,Lower 15.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+rain,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,rain,Higher 25.5 kills on maps 1+2,2025-08-31T17:41:29Z
+rain,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,rain,Lower 25.5 kills on maps 1+2,2025-08-31T17:41:29Z
+rain,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,rain,Higher 14.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+rain,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,rain,Lower 14.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+apEX,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,apEX,Higher 24.5 kills on maps 1+2,2025-08-31T14:00:13Z
+apEX,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,apEX,Lower 24.5 kills on maps 1+2,2025-08-31T14:00:13Z
+apEX,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,apEX,Higher 10.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+apEX,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,apEX,Lower 10.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+Lake,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Lake,Higher 32.5 kills on maps 1+2,2025-08-31T21:45:04Z
+Lake,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Lake,Lower 32.5 kills on maps 1+2,2025-08-31T21:45:04Z
+Lake,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Lake,Higher 17.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+Lake,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Lake,Lower 17.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+Junior,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Junior,Higher 32.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Junior,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Junior,Lower 32.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Junior,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Junior,Higher 11.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+Junior,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Junior,Lower 11.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+CYPHER,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, CYPHER,Higher 29.5 kills on maps 1+2,2025-08-31T21:45:04Z
+CYPHER,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, CYPHER,Lower 29.5 kills on maps 1+2,2025-08-31T21:45:04Z
+CYPHER,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, CYPHER,Higher 15.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+CYPHER,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, CYPHER,Lower 15.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+fear,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, fear,Higher 23.5 kills on maps 1+2,2025-08-31T21:45:04Z
+fear,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, fear,Lower 23.5 kills on maps 1+2,2025-08-31T21:45:04Z
+fear,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, fear,Higher 10.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+fear,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, fear,Lower 10.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+HexT,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, HexT,Higher 28.5 kills on maps 1+2,2025-08-31T21:45:04Z
+HexT,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, HexT,Lower 28.5 kills on maps 1+2,2025-08-31T21:45:04Z
+HexT,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, HexT,Higher 15.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+HexT,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, HexT,Lower 15.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+Grizz,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Grizz,Higher 29.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Grizz,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Grizz,Lower 29.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Grizz,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Grizz,Higher 15.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+Grizz,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Grizz,Lower 15.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+Swisher,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Swisher,Higher 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+Swisher,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Swisher,Lower 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+Swisher,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Swisher,Higher 14.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+Swisher,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Swisher,Lower 14.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+m1quse,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, m1quse,Higher 26.5 kills on maps 1+2,2025-08-31T21:45:04Z
+m1quse,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, m1quse,Lower 26.5 kills on maps 1+2,2025-08-31T21:45:04Z
+m1quse,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, m1quse,Higher 12.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+m1quse,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, m1quse,Lower 12.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+spirit,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, spirit,Higher 32.5 kills on maps 1+2,2025-08-31T21:45:04Z
+spirit,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, spirit,Lower 32.5 kills on maps 1+2,2025-08-31T21:45:04Z
+spirit,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, spirit,Higher 17.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+spirit,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, spirit,Lower 17.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+swerzieN,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, swerzieN,Higher 32.5 kills on maps 1+2,2025-08-31T22:42:37Z
+swerzieN,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, swerzieN,Lower 32.5 kills on maps 1+2,2025-08-31T22:42:37Z
+swerzieN,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, swerzieN,Higher 20.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+swerzieN,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, swerzieN,Lower 20.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+Icarus,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Icarus,Higher 30.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Icarus,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Icarus,Lower 30.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Icarus,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Icarus,Higher 17.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+Icarus,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Icarus,Lower 17.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+motm,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, motm,Higher 27.5 kills on maps 1+2,2025-08-31T14:00:13Z
+motm,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, motm,Lower 27.5 kills on maps 1+2,2025-08-31T14:00:13Z
+motm,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, motm,Higher 14.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+motm,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, motm,Lower 14.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+laxiee,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, laxiee,Higher 31.5 kills on maps 1+2,2025-08-31T14:00:13Z
+laxiee,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, laxiee,Lower 31.5 kills on maps 1+2,2025-08-31T14:00:13Z
+laxiee,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, laxiee,Higher 18.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+laxiee,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, laxiee,Lower 18.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+KusMe,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, KusMe,Higher 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+KusMe,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, KusMe,Lower 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+KusMe,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, KusMe,Higher 15.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+KusMe,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, KusMe,Lower 15.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+s1n,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,s1n,Higher 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+s1n,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,s1n,Lower 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+s1n,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,s1n,Higher 16.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+s1n,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,s1n,Lower 16.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+Cryptic,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Cryptic,Higher 27.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Cryptic,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Cryptic,Lower 27.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Cryptic,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Cryptic,Higher 15.5 headshots on maps 1+2,2025-08-31T20:27:27Z
+Cryptic,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Cryptic,Lower 15.5 headshots on maps 1+2,2025-08-31T20:27:27Z
+SeabraEZ,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, SeabraEZ,Higher 28.5 kills on maps 1+2,2025-08-31T14:00:13Z
+SeabraEZ,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, SeabraEZ,Lower 28.5 kills on maps 1+2,2025-08-31T14:00:13Z
+SeabraEZ,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, SeabraEZ,Higher 14.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+SeabraEZ,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, SeabraEZ,Lower 14.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+CLASIA,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, CLASIA,Higher 27.5 kills on maps 1+2,2025-08-31T14:00:13Z
+CLASIA,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, CLASIA,Lower 27.5 kills on maps 1+2,2025-08-31T14:00:13Z
+CLASIA,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, CLASIA,Higher 14.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+CLASIA,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, CLASIA,Lower 14.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+fnl,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, fnl,Higher 29.5 kills on maps 1+2,2025-08-31T14:00:13Z
+fnl,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, fnl,Lower 29.5 kills on maps 1+2,2025-08-31T14:00:13Z
+fnl,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, fnl,Higher 15.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+fnl,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, fnl,Lower 15.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+Chop,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Chop,Higher 27.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Chop,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Chop,Lower 27.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Chop,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Chop,Higher 15.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+Chop,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Chop,Lower 15.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+tucks,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,tucks,Higher 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+tucks,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,tucks,Lower 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+tucks,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,tucks,Higher 13.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+tucks,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,tucks,Lower 13.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+Walco,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Walco,Higher 27.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Walco,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Walco,Lower 27.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Walco,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Walco,Higher 15.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+Walco,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Walco,Lower 15.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+viz,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,viz,Higher 29.5 kills on maps 1+2,2025-08-31T14:00:13Z
+viz,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,viz,Lower 29.5 kills on maps 1+2,2025-08-31T14:00:13Z
+viz,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,viz,Higher 16.5 headshots on maps 1+2,2025-08-31T20:27:11Z
+viz,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,viz,Lower 16.5 headshots on maps 1+2,2025-08-31T20:27:11Z
+rikon,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,rikon,Higher 29.5 kills on maps 1+2,2025-08-31T21:45:04Z
+rikon,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,rikon,Lower 29.5 kills on maps 1+2,2025-08-31T21:45:04Z
+rikon,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,rikon,Higher 17.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+rikon,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,rikon,Lower 17.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+Something,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Something,Higher 26.5 kills on maps 1+2,2025-08-31T21:45:04Z
+Something,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Something,Lower 26.5 kills on maps 1+2,2025-08-31T21:45:04Z
+Something,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Something,Higher 15.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+Something,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Something,Lower 15.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+kashl1d,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,kashl1d,Higher 31.5 kills on maps 1+2,2025-08-31T21:45:04Z
+kashl1d,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,kashl1d,Lower 31.5 kills on maps 1+2,2025-08-31T21:45:04Z
+kashl1d,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,kashl1d,Higher 10.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+kashl1d,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,kashl1d,Lower 10.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+P3R3IIRA,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, P3R3IIRA,Higher 29.5 kills on maps 1+2,2025-08-31T14:00:13Z
+P3R3IIRA,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, P3R3IIRA,Lower 29.5 kills on maps 1+2,2025-08-31T14:00:13Z
+P3R3IIRA,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, P3R3IIRA,Higher 14.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+P3R3IIRA,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, P3R3IIRA,Lower 14.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+relaxxie,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,relaxxie,Higher 29.5 kills on maps 1+2,2025-08-31T21:45:04Z
+relaxxie,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,relaxxie,Lower 29.5 kills on maps 1+2,2025-08-31T21:45:04Z
+relaxxie,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,relaxxie,Higher 15.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+relaxxie,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,relaxxie,Lower 15.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+St0m4k,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,St0m4k,Higher 29.5 kills on maps 1+2,2025-08-31T14:00:13Z
+St0m4k,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,St0m4k,Lower 29.5 kills on maps 1+2,2025-08-31T14:00:13Z
+St0m4k,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,St0m4k,Higher 15.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+St0m4k,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,St0m4k,Lower 15.0 headshots on maps 1+2,2025-08-31T14:00:13Z
+anber,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,anber,Higher 30.5 kills on maps 1+2,2025-08-31T14:00:13Z
+anber,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,anber,Lower 30.5 kills on maps 1+2,2025-08-31T14:00:13Z
+anber,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,anber,Higher 17.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+anber,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,anber,Lower 17.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+qw1nk1,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, qw1nk1,Higher 28.5 kills on maps 1+2,2025-08-31T21:45:04Z
+qw1nk1,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, qw1nk1,Lower 28.5 kills on maps 1+2,2025-08-31T21:45:04Z
+qw1nk1,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, qw1nk1,Higher 17.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+qw1nk1,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, qw1nk1,Lower 17.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+Dengzoe,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,Dengzoe,Higher 24.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Dengzoe,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,Dengzoe,Lower 24.5 kills on maps 1+2,2025-08-31T14:00:13Z
+Dengzoe,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,Dengzoe,Higher 10.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+Dengzoe,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,Dengzoe,Lower 10.5 headshots on maps 1+2,2025-08-31T14:00:13Z
+z1k4,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, z1k4,Higher 28.5 kills on maps 1+2,2025-08-31T21:45:04Z
+z1k4,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, z1k4,Lower 28.5 kills on maps 1+2,2025-08-31T21:45:04Z
+z1k4,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, z1k4,Higher 10.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+z1k4,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, z1k4,Lower 10.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+flouzer,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,flouzer,Higher 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+flouzer,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,flouzer,Lower 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+flouzer,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,flouzer,Higher 14.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+flouzer,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,flouzer,Lower 14.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+zune,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, zune,Higher 30.5 kills on maps 1+2,2025-08-31T21:45:04Z
+zune,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, zune,Lower 30.5 kills on maps 1+2,2025-08-31T21:45:04Z
+zune,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, zune,Higher 14.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+zune,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, zune,Lower 14.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+JohnSm1th,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,JohnSm1th,Higher 31.5 kills on maps 1+2,2025-08-31T21:45:04Z
+JohnSm1th,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,JohnSm1th,Lower 31.5 kills on maps 1+2,2025-08-31T21:45:04Z
+JohnSm1th,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,JohnSm1th,Higher 17.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+JohnSm1th,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,JohnSm1th,Lower 17.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+swetsi,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, swetsi,Higher 31.5 kills on maps 1+2,2025-08-31T21:45:04Z
+swetsi,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, swetsi,Lower 31.5 kills on maps 1+2,2025-08-31T21:45:04Z
+swetsi,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, swetsi,Higher 9.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+swetsi,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, swetsi,Lower 9.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+X5G7V,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, X5G7V,Higher 26.5 kills on maps 1+2,2025-08-31T21:45:04Z
+X5G7V,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, X5G7V,Lower 26.5 kills on maps 1+2,2025-08-31T21:45:04Z
+X5G7V,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, X5G7V,Higher 11.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+X5G7V,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, X5G7V,Lower 11.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+TOAO,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, TOAO,Higher 26.5 kills on maps 1+2,2025-08-31T21:45:04Z
+TOAO,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, TOAO,Lower 26.5 kills on maps 1+2,2025-08-31T21:45:04Z
+TOAO,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, TOAO,Higher 13.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+TOAO,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, TOAO,Lower 13.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+DGL,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, DGL,Higher 32.5 kills on maps 1+2,2025-08-31T21:45:04Z
+DGL,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, DGL,Lower 32.5 kills on maps 1+2,2025-08-31T21:45:04Z
+DGL,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, DGL,Higher 11.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+DGL,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, DGL,Lower 11.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+Void,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Void,Higher 30.5 kills on maps 1+2,2025-08-31T21:45:04Z
+Void,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Void,Lower 30.5 kills on maps 1+2,2025-08-31T21:45:04Z
+Void,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Void,Higher 13.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+Void,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Void,Lower 13.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+Kobe,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, Kobe,Higher 30.5 kills on maps 1+2,2025-08-31T21:45:04Z
+Kobe,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, Kobe,Lower 30.5 kills on maps 1+2,2025-08-31T21:45:04Z
+Kobe,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, Kobe,Higher 14.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+Kobe,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, Kobe,Lower 14.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+slaxz-,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,slaxz-,Higher 30.5 kills on maps 1+2,2025-08-31T21:45:04Z
+slaxz-,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,slaxz-,Lower 30.5 kills on maps 1+2,2025-08-31T21:45:04Z
+slaxz-,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,slaxz-,Higher 10.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+slaxz-,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,slaxz-,Lower 10.5 headshots on maps 1+2,2025-08-31T21:45:04Z
+senka,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0,senka,Higher 26.5 kills on maps 1+2,2025-08-31T21:45:04Z
+senka,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0,senka,Lower 26.5 kills on maps 1+2,2025-08-31T21:45:04Z
+senka,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0,senka,Higher 13.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+senka,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0,senka,Lower 13.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+kairo,CS,CS,kills_on_maps_1_2,,over,-112.0,1.9,1.0, kairo,Higher 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+kairo,CS,CS,kills_on_maps_1_2,,under,-112.0,1.9,1.0, kairo,Lower 27.5 kills on maps 1+2,2025-08-31T21:45:04Z
+kairo,CS,CS,headshots_on_maps_1_2,,over,-112.0,1.9,1.0, kairo,Higher 15.0 headshots on maps 1+2,2025-08-31T21:45:04Z
+kairo,CS,CS,headshots_on_maps_1_2,,under,-112.0,1.9,1.0, kairo,Lower 15.0 headshots on maps 1+2,2025-08-31T21:45:04Z
