@@ -53,146 +53,88 @@ jobs:
 
           // ---------- YOUR PLAYER MAP (from your message) ----------
           const ALIASES = {
-            "adron": /* TODO: HLTV id for ADRON */,
-            "aw": /* TODO: HLTV id for AW */,
-            "artfr0st": /* TODO: HLTV id for ArtFr0st */,
-            "belchonokk": /* TODO: HLTV id for BELCHONOKK */,
-            "batuuu": /* TODO: HLTV id for Batuuu */,
-            "brollan": /* TODO: HLTV id for Brollan */,
-            "clasia": /* TODO: HLTV id for CLASIA */,
-            "cypher": /* TODO: HLTV id for CYPHER */,
-            "callme": /* TODO: HLTV id for Callme */,
-            "chop": /* TODO: HLTV id for Chop */,
-            "chopper": /* TODO: HLTV id for Chopper */,
-            "ciocardau": /* TODO: HLTV id for Ciocardau */,
-            "closer": /* TODO: HLTV id for Closer */,
-            "crunchy": /* TODO: HLTV id for Crunchy */,
-            "cryptic": /* TODO: HLTV id for Cryptic */,
-            "dgl": /* TODO: HLTV id for DGL */,
-            "dengzoe": /* TODO: HLTV id for Dengzoe */,
-            "drox": /* TODO: HLTV id for Drox */,
-            "elfmelk": /* TODO: HLTV id for ELFMELK */,
-            "fallen": /* TODO: HLTV id for FalleN */,
-            "grizz": /* TODO: HLTV id for Grizz */,
-            "heavygod": /* TODO: HLTV id for HeavyGod */,
-            "hext": /* TODO: HLTV id for HexT */,
-            "icarus": /* TODO: HLTV id for Icarus */,
-            "jambo": /* TODO: HLTV id for Jambo */,
-            "jame": /* TODO: HLTV id for Jame */,
-            "jayy2s": /* TODO: HLTV id for Jayy2s */,
-            "jimpphat": /* TODO: HLTV id for Jimpphat */,
-            "johnsm1th": /* TODO: HLTV id for JohnSm1th */,
-            "junior": /* TODO: HLTV id for Junior */,
-            "krimz": /* TODO: HLTV id for KRiMZ */,
-            "kscerato": /* TODO: HLTV id for KSCerato */,
-            "karrigan": 429,  // Karrigan
-            "kiro": /* TODO: HLTV id for Kiro */,
-            "kobe": /* TODO: HLTV id for Kobe */,
-            "kofte": /* TODO: HLTV id for Kofte */,
-            "kusme": /* TODO: HLTV id for KusMe */,
-            "lake": /* TODO: HLTV id for Lake */,
-            "lolsav1or": /* TODO: HLTV id for LoL: Sav1or */,
-            "lolscout": /* TODO: HLTV id for LoL: Scout */,
-            "lolxun": /* TODO: HLTV id for LoL: XUN */,
-            "lolxiaoxu": /* TODO: HLTV id for LoL: Xiaoxu */,
-            "lolzhuo": /* TODO: HLTV id for LoL: Zhuo */,
-            "lolclimber": /* TODO: HLTV id for LoL: climber */,
-            "lolpeyz": /* TODO: HLTV id for LoL: peyz */,
-            "lolsasi": /* TODO: HLTV id for LoL: sasi */,
-            "lolxqw": /* TODO: HLTV id for LoL: xqw */,
-            "lolycx": /* TODO: HLTV id for LoL: ycx */,
-            "matys": /* TODO: HLTV id for MATYS */,
-            "magnojez": /* TODO: HLTV id for Magnojez */,
-            "mihile": /* TODO: HLTV id for Mihile */,
-            "mingovi": /* TODO: HLTV id for Mingovi */,
-            "nathon": /* TODO: HLTV id for Nathon */,
-            "norwi": /* TODO: HLTV id for Norwi */,
-            "p3r3iira": /* TODO: HLTV id for P3R3IIRA */,
-            "peach": /* TODO: HLTV id for Peach */,
-            "rafaxf": /* TODO: HLTV id for Rafaxf */,
-            "re1gn": /* TODO: HLTV id for Re1GN */,
-            "scorth": /* TODO: HLTV id for Scorth */,
-            "scr0b": /* TODO: HLTV id for Scr0b */,
-            "seabraez": /* TODO: HLTV id for SeabraEZ */,
-            "something": /* TODO: HLTV id for Something */,
-            "spinx": 16949,  // Spinx
-            "st0m4k": /* TODO: HLTV id for St0m4k */,
-            "sunpayus": 15858,  // SunPayus
-            "swisher": /* TODO: HLTV id for Swisher */,
-            "toao": /* TODO: HLTV id for TOAO */,
-            "triplus": /* TODO: HLTV id for TRIPLUS */,
-            "toonge": /* TODO: HLTV id for ToongE */,
-            "void": /* TODO: HLTV id for Void */,
-            "walco": /* TODO: HLTV id for Walco */,
-            "wolfy": /* TODO: HLTV id for WolfY */,
-            "x5g7v": /* TODO: HLTV id for X5G7V */,
-            "xielo": /* TODO: HLTV id for XiELO */,
-            "yekindar": /* TODO: HLTV id for YEKINDAR */,
-            "zccnb666": /* TODO: HLTV id for Zccnb666 */,
-            "zest": /* TODO: HLTV id for Zest */,
-            "zont1x": /* TODO: HLTV id for Zont1x */,
-            "zywoo": 11893,  // ZywOo
-            "anber": /* TODO: HLTV id for anber */,
-            "apex": /* TODO: HLTV id for apEX */,
-            "blamef": 15165,  // blameF
-            "bluewh1te": /* TODO: HLTV id for bluewh1te */,
-            "boombl4": /* TODO: HLTV id for boombl4 */,
-            "broky": 16555,  // broky
-            "clax": /* TODO: HLTV id for clax */,
-            "d1ledez": /* TODO: HLTV id for d1Ledez */,
-            "d1maje": /* TODO: HLTV id for d1maje */,
-            "danistzz": /* TODO: HLTV id for danistzz */,
-            "donk": 22729,  // donk
-            "dpr": /* TODO: HLTV id for dpr */,
-            "executor": /* TODO: HLTV id for executor */,
-            "fear": /* TODO: HLTV id for fear */,
-            "flamez": 20102,  // flameZ
-            "flouzer": /* TODO: HLTV id for flouzer */,
-            "fnl": /* TODO: HLTV id for fnl */,
-            "foggers": /* TODO: HLTV id for foggers */,
-            "frozen": 7187,  // frozen
-            "gump": /* TODO: HLTV id for gump */,
-            "hunter": 9647,  // huNter-
-            "jcobbb": /* TODO: HLTV id for jcobbb */,
-            "kairo": /* TODO: HLTV id for kairo */,
-            "kashl1d": /* TODO: HLTV id for kashl1d */,
-            "kinqie": /* TODO: HLTV id for kinqie */,
-            "kritik": /* TODO: HLTV id for kritik */,
-            "laxiee": /* TODO: HLTV id for laxiee */,
-            "m1quse": /* TODO: HLTV id for m1quse */,
-            "malbsmd": /* TODO: HLTV id for malbsMd */,
-            "mezii": /* TODO: HLTV id for mezii */,
-            "molodoy": /* TODO: HLTV id for molodoy */,
-            "monkas": /* TODO: HLTV id for monkaS */,
-            "motm": /* TODO: HLTV id for motm */,
-            "nota": /* TODO: HLTV id for nota */,
-            "patsi": /* TODO: HLTV id for patsi */,
-            "qw1nk1": /* TODO: HLTV id for qw1nk1 */,
-            "r3salt": /* TODO: HLTV id for r3salt */,
-            "ragga": /* TODO: HLTV id for ragga */,
-            "rain": 8183,  // rain
-            "relaxxie": /* TODO: HLTV id for relaxxie */,
-            "rikon": /* TODO: HLTV id for rikon */,
-            "ropz": 11816,  // ropz
-            "s1n": /* TODO: HLTV id for s1n */,
-            "s1ren": /* TODO: HLTV id for s1ren */,
-            "senka": /* TODO: HLTV id for senka */,
-            "sh1ro": /* TODO: HLTV id for sh1ro */,
-            "slaxz": /* TODO: HLTV id for slaxz- */,
-            "spirit": /* TODO: HLTV id for spirit */,
-            "swerzien": /* TODO: HLTV id for swerzieN */,
-            "swetsi": /* TODO: HLTV id for swetsi */,
-            "torzsi": 19619,  // torzsi
-            "tucks": /* TODO: HLTV id for tucks */,
-            "viz": /* TODO: HLTV id for viz */,
-            "xeedo": /* TODO: HLTV id for xeedo */,
-            "xertion": 20424,  // xertioN
-            "yuurih": /* TODO: HLTV id for yuurih */,
-            "z1nny": /* TODO: HLTV id for z1Nny */,
-            "z1k4": /* TODO: HLTV id for z1k4 */,
-            "zune": /* TODO: HLTV id for zune */,
-            "zweih": /* TODO: HLTV id for zweih */
-          };
+  "adron": null, // TODO: HLTV id for ADRON
+  "aw": null, // TODO: HLTV id for AW
+  "artfr0st": null, // TODO: HLTV id for ArtFr0st
+  "belchonokk": null, // TODO: HLTV id for BELCHONOKK
+  "batuuu": null, // TODO: HLTV id for Batuuu
+  "brollan": null, // TODO: HLTV id for Brollan
+  "clasia": null, // TODO: HLTV id for CLASIA
+  "cypher": null, // TODO: HLTV id for CYPHER
+  "callme": null, // TODO: HLTV id for Callme
+  "chop": null, // TODO: HLTV id for Chop
+  "chopper": null, // TODO: HLTV id for Chopper
+  "ciocardau": null, // TODO: HLTV id for Ciocardau
+  "closer": null, // TODO: HLTV id for Closer
+  "crunchy": null, // TODO: HLTV id for Crunchy
+  "cryptic": null, // TODO: HLTV id for Cryptic
+  "dgl": null, // TODO: HLTV id for DGL
+  "dengzoe": null, // TODO: HLTV id for Dengzoe
+  "drox": null, // TODO: HLTV id for Drox
+  "elfmelk": null, // TODO: HLTV id for ELFMELK
+  "fallen": null, // TODO: HLTV id for FalleN
+  "grizz": null, // TODO: HLTV id for Grizz
+  "heavygod": null, // TODO: HLTV id for HeavyGod
+  "hext": null, // TODO: HLTV id for HexT
+  "icarus": null, // TODO: HLTV id for Icarus
+  "jambo": null, // TODO: HLTV id for Jambo
+  "jame": null, // TODO: HLTV id for Jame
+  "jayy2s": null, // TODO: HLTV id for Jayy2s
+  "jimpphat": null, // TODO: HLTV id for Jimpphat
+  "johnsm1th": null, // TODO: HLTV id for JohnSm1th
+  "junior": null, // TODO: HLTV id for Junior
+  "krimz": null, // TODO: HLTV id for KRiMZ
+  "kscerato": null, // TODO: HLTV id for KSCerato
+  "karrigan": 429, // Karrigan
+  "kiro": null, // TODO: HLTV id for Kiro
+  "kobe": null, // TODO: HLTV id for Kobe
+  "kofte": null, // TODO: HLTV id for Kofte
+  "kusme": null, // TODO: HLTV id for KusMe
+  "lake": null, // TODO: HLTV id for Lake
+  "matys": null, // TODO: HLTV id for MATYS
+  "magnojez": null, // TODO: HLTV id for Magnojez
+  "mihile": null, // TODO: HLTV id for Mihile
+  "mingovi": null, // TODO: HLTV id for Mingovi
+  "nathon": null, // TODO: HLTV id for Nathon
+  "norwi": null, // TODO: HLTV id for Norwi
+  "p3r3iira": null, // TODO: HLTV id for P3R3IIRA
+  "peach": null, // TODO: HLTV id for Peach
+  "rafaxf": null, // TODO: HLTV id for Rafaxf
+  "re1gn": null, // TODO: HLTV id for Re1GN
+  "scorth": null, // TODO: HLTV id for Scorth
+  "scr0b": null, // TODO: HLTV id for Scr0b
+  "seabraez": null, // TODO: HLTV id for SeabraEZ
+  "something": null, // TODO: HLTV id for Something
+  "spinx": 16949, // Spinx
+  "st0m4k": null, // TODO: HLTV id for St0m4k
+  "sunpayus": 15858, // SunPayus
+  "swisher": null, // TODO: HLTV id for Swisher
+  "toao": null, // TODO: HLTV id for TOAO
+  "triplus": null, // TODO: HLTV id for TRIPLUS
+  "toonge": null, // TODO: HLTV id for ToongE
+  "void": null, // TODO: HLTV id for Void
+  "walco": null, // TODO: HLTV id for Walco
+  "wolfy": null, // TODO: HLTV id for WolfY
+  "x5g7v": null, // TODO: HLTV id for X5G7V
+  "xielo": null, // TODO: HLTV id for XiELO
+  "yekindar": null, // TODO: HLTV id for YEKINDAR
+  "zccnb666": null, // TODO: HLTV id for Zccnb666
+  "zest": null, // TODO: HLTV id for Zest
+  "zont1x": null, // TODO: HLTV id for Zont1x
+  "zywoo": 11893, // ZywOo
+  "apex": null, // TODO: HLTV id for apEX
+  "blamef": 15165, // blameF
+  "boombl4": null, // TODO: HLTV id for boombl4
+  "broky": 16555, // broky
+  "donk": 22729, // donk
+  "flamez": 20102, // flameZ
+  "frozen": 7187, // frozen
+  "hunter": 9647, // huNter-
+  "rain": 8183, // rain
+  "ropz": 11816, // ropz
+  "torzsi": 19619, // torzsi
+  "xertion": 20424 // xertioN
+};
 
           // ---------- helpers ----------
           function listFiles(root='.') {
