@@ -1,4 +1,4 @@
-name: HLTV ingest + projections (cross-ref schedule)
+name: HLTV Top-100 ingest + projections
 on:
   workflow_dispatch: {}
 
@@ -15,18 +15,18 @@ jobs:
       - name: Install deps
         run: npm i hltv papaparse
 
-      - name: Fetch schedule (hosted API) → resolve HLTV teams → player stats → projections
+      - name: Fetch HLTV Top-100 → rosters → player stats → projections (fault-tolerant)
         run: |
           node - <<'JS'
-          // ---- Imports (CJS-friendly) ----
-          const { HLTV } = require('hltv');          // official Node wrapper
+          // CJS-friendly imports
+          const { HLTV } = require('hltv');
           const fs = require('fs');
           const Papa = require('papaparse');
 
-          // Node 18+ and 20+ have global fetch; no extra deps
+          // Gentle pacing to avoid Cloudflare
           const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-          // ---- Helpers ----
+          // Utils
           const writeJSON = (obj, path) => {
             try { fs.writeFileSync(path, JSON.stringify(obj, null, 2)); }
             catch (e) { console.error('writeJSON error', path, e?.message); }
@@ -36,156 +36,126 @@ jobs:
               const csv = Papa.unparse(rows || [], { quotes: true });
               fs.writeFileSync(path, csv);
             } catch (e) {
-              console.error('writeCSV error', path, e?.message);
+              console.error('writeCSV error for', path, e?.message);
               try { fs.writeFileSync(path, ''); } catch {}
             }
           };
-          const now = Date.now();
-          const inDays = d => now + d*24*3600*1000;
-
-          // ---- 1) Cross-reference schedule: hosted API first, fallback to HLTV.getMatches() ----
-          async function getUpcomingMatches() {
-            const out = { from: 'hosted', matches: [] };
-            try {
-              const res = await fetch('https://hltv-api.vercel.app/api/matches', { headers: { 'user-agent': 'github-action-hltv-projections' }});
-              const data = await res.json();
-              // keep matches from today through next 3 days (inclusive)
-              const upper = inDays(3);
-              const m = (Array.isArray(data) ? data : []).filter(m => {
-                if (!m?.date) return true; // keep if no date (some feeds omit)
-                const t = isNaN(+m.date) ? Date.parse(m.date) : +m.date;
-                return isFinite(t) && t <= upper && t >= now - 24*3600*1000; // allow late-posted "today"
-              });
-              out.matches = m;
-              if (m.length) return out;
-            } catch (e) {
-              console.error('Hosted schedule fetch failed:', e?.message);
-            }
-            // Fallback to official HLTV wrapper (may be Cloudflare-sensitive)
-            try {
-              const mAll = await HLTV.getMatches();
-              const upper = inDays(3);
-              const m = (mAll || []).filter(m => m?.date && +new Date(m.date) <= upper && +new Date(m.date) >= now - 24*3600*1000);
-              out.from = 'hltv';
-              out.matches = m.map(x => ({
-                id: x.id, team1: x.team1, team2: x.team2, date: x.date
-              }));
-            } catch (e) {
-              console.error('HLTV.getMatches fallback failed:', e?.message);
-              out.from = 'none';
-              out.matches = [];
-            }
-            return out;
-          }
 
           (async () => {
-            // ---- 2) Pull matches and extract team IDs/names ----
-            const sched = await getUpcomingMatches();
-            writeJSON(sched, 'crossref_matches.json');
+            let ranking = [];
+            let teamIds = [];
+            let teamDetails = [];
+            let playerIds = [];
+            let stats = [];
 
-            // Try to get team IDs from hosted feed; if missing, we’ll try to resolve by HLTV.getTeam via known IDs later
-            const rawTeamIds = new Set();
-            const rawTeamNames = new Set();
-
-            for (const m of sched.matches) {
-              if (m?.team1?.id) rawTeamIds.add(m.team1.id);
-              if (m?.team2?.id) rawTeamIds.add(m.team2.id);
-              if (m?.team1?.name) rawTeamNames.add(m.team1.name);
-              if (m?.team2?.name) rawTeamNames.add(m.team2.name);
-            }
-
-            // If we have zero ids, we’ll try a lightweight HLTV.getMatches() pass to enrich with IDs
-            if (rawTeamIds.size === 0) {
-              try {
-                const mAll = await HLTV.getMatches();
-                const mapNameToId = {};
-                for (const m of mAll || []) {
-                  if (m?.team1?.id && m?.team1?.name) mapNameToId[m.team1.name.toLowerCase()] = m.team1.id;
-                  if (m?.team2?.id && m?.team2?.name) mapNameToId[m.team2.name.toLowerCase()] = m.team2.id;
-                }
-                for (const nm of rawTeamNames) {
-                  const id = mapNameToId[nm.toLowerCase()];
-                  if (id) rawTeamIds.add(id);
-                }
-              } catch (e) {
-                console.error('Enrichment via HLTV.getMatches failed:', e?.message);
-              }
-            }
-
-            const teamIds = Array.from(rawTeamIds);
-            if (!teamIds.length) {
-              console.warn('No team IDs resolved from cross-ref; producing empty artifacts.');
-              writeJSON(sched, 'hltv_matches_today.json');   // keep prior format name for continuity
+            // 1) Get HLTV Top-100 teams (ranking)
+            try {
+              // HLTV.getTeamRanking() returns array with { team: { id, name }, place, points, ... }
+              const all = await HLTV.getTeamRanking();
+              ranking = (all || []).slice(0, 100);
+              teamIds = ranking.map(r => r?.team?.id).filter(Boolean);
+              writeJSON({ count: teamIds.length, sample: ranking.slice(0,5) }, 'hltv_top100.json');
+            } catch (e) {
+              console.error('getTeamRanking failed:', e?.message);
+              writeJSON({ error: e?.message }, 'hltv_top100.json');
+              // If we can't get ranking, bail gracefully with empty artifacts
+              writeJSON([], 'hltv_matches_today.json');
               writeCSV([], 'hltv_player_form.csv');
               writeCSV([], 'hltv_projections.csv');
               return;
             }
 
-            // ---- 3) Team → roster → player IDs (official HLTV lib; gentle throttle) ----
-            writeJSON(sched, 'hltv_matches_today.json');     // for compatibility with previous runs
-            const teamDetails = [];
-            for (const id of teamIds) {
-              try {
-                const t = await HLTV.getTeam({ id });
-                teamDetails.push(t || { players: [] });
-              } catch (e) {
-                console.error('getTeam fail', id, e?.message);
+            // 2) For each team id → get roster (players)
+            try {
+              for (const id of teamIds) {
+                try {
+                  const t = await HLTV.getTeam({ id });
+                  teamDetails.push({ id, name: t?.name || '', players: t?.players || [] });
+                } catch (e) {
+                  console.error('getTeam fail', id, e?.message);
+                  teamDetails.push({ id, name: '', players: [] });
+                }
+                await sleep(300);
               }
-              await sleep(350);  // gentle, avoid CF
+              writeJSON({ teams: teamDetails.length }, 'hltv_teams_meta.json');
+              playerIds = [...new Set(teamDetails.flatMap(t => (t.players || []).map(p => p.id)).filter(Boolean))];
+            } catch (e) {
+              console.error('Team roster pipeline failed:', e?.message);
             }
 
-            const playerIds = [...new Set(teamDetails.flatMap(t => (t.players||[]).map(p => p.id)).filter(Boolean))];
+            // 3) Player stats (last 60 days) for all unique players seen in Top-100 rosters
+            try {
+              const todayISO = new Date().toISOString().slice(0,10);
+              const sinceISO = new Date(Date.now() - 60*24*3600*1000).toISOString().slice(0,10);
 
-            // ---- 4) Player stats (last 60 days) ----
-            const todayISO = new Date().toISOString().slice(0,10);
-            const sinceISO = new Date(Date.now() - 60*24*3600*1000).toISOString().slice(0,10);
-            const stats = [];
-            for (const pid of playerIds) {
-              try {
-                const s = await HLTV.getPlayerStats({ id: pid, startDate: sinceISO, endDate: todayISO });
-                stats.push({
-                  playerId: pid,
-                  nickname: s?.player?.nickname,
-                  team:     s?.team?.name,
-                  maps:     s?.overview?.mapsPlayed,
-                  kpr:      s?.overview?.kpr,
-                  hsPct:    s?.overview?.hsPercentage,
-                  adr:      s?.overview?.adr,
-                  rating:   s?.overview?.rating1
-                });
-              } catch (e) {
-                console.error('getPlayerStats fail', pid, e?.message);
+              for (const pid of playerIds) {
+                try {
+                  const s = await HLTV.getPlayerStats({ id: pid, startDate: sinceISO, endDate: todayISO });
+                  stats.push({
+                    playerId: pid,
+                    nickname: s?.player?.nickname,
+                    team:     s?.team?.name,
+                    maps:     s?.overview?.mapsPlayed,
+                    kpr:      s?.overview?.kpr,            // kills per round
+                    hsPct:    s?.overview?.hsPercentage,   // headshot percentage
+                    adr:      s?.overview?.adr,
+                    rating:   s?.overview?.rating1
+                  });
+                } catch (e) {
+                  console.error('getPlayerStats fail', pid, e?.message);
+                }
+                await sleep(300);
               }
-              await sleep(350);
+            } catch (e) {
+              console.error('Player stats pipeline failed:', e?.message);
             }
+
+            // Save the raw player form table
             writeCSV(stats, 'hltv_player_form.csv');
 
-            // ---- 5) Conservative projections (CS2 only; no UD join here) ----
-            const shrink = (rate, n, base, k) => ((n*rate + k*base)/((n+k)||1));
-            const leagueKPR = 0.68, leagueHS = 0.46;
-            const out = [];
-            for (const r of stats) {
-              const maps = +r.maps || 0;
-              const kpr  = +r.kpr  || leagueKPR;
-              const hs   = +r.hsPct || leagueHS;
-              // heavier regression for small samples / new teams
-              const kprAdj = shrink(kpr, maps, leagueKPR, maps < 25 ? 40 : 25);
-              const hsAdj  = shrink(hs,  maps, leagueHS,  maps < 25 ? 60 : 40);
-              // Balanced baseline ≈ 50 rounds across Maps 1+2 (MR12)
-              const muKills = 50 * kprAdj;
-              out.push({
-                player: r.nickname, team: r.team, maps,
-                kprAdj: +kprAdj.toFixed(3), hsAdj: +hsAdj.toFixed(3),
-                projKills: +muKills.toFixed(1),
-                projHS:    +(muKills*hsAdj).toFixed(1)
-              });
+            // 4) Conservative projections (CS2 only; independent of UD)
+            try {
+              const shrink = (rate, n, base, k) => ((n*rate + k*base)/((n+k)||1));
+              const leagueKPR = 0.68, leagueHS = 0.46;      // conservative baselines
+              const out = [];
+
+              for (const r of stats) {
+                const maps = +r.maps || 0;
+                const kpr  = +r.kpr  || leagueKPR;
+                const hs   = +r.hsPct || leagueHS;
+
+                // Heavier regression when sample is small/new team
+                const kprAdj = shrink(kpr, maps, leagueKPR, maps < 25 ? 40 : 25);
+                const hsAdj  = shrink(hs,  maps, leagueHS,  maps < 25 ? 60 : 40);
+
+                // Balanced baseline ≈ 50 rounds across Maps 1+2 (MR12)
+                const muKills = 50 * kprAdj;
+
+                out.push({
+                  player: r.nickname,
+                  team:   r.team,
+                  maps,
+                  kprAdj:  +kprAdj.toFixed(3),
+                  hsAdj:   +hsAdj.toFixed(3),
+                  projKills: +muKills.toFixed(1),
+                  projHS:    +(muKills*hsAdj).toFixed(1)
+                });
+              }
+
+              writeCSV(out, 'hltv_projections.csv');
+              console.log(`Top-100 teams processed. Teams: ${teamIds.length}, Players: ${playerIds.length}, Projections: ${out.length}`);
+            } catch (e) {
+              console.error('Projection step failed:', e?.message);
+              writeCSV([], 'hltv_projections.csv');
             }
-            writeCSV(out, 'hltv_projections.csv');
-            console.log(`Cross-ref source: ${sched.from}; teams: ${teamIds.length}; players: ${playerIds.length}; projections: ${out.length}`);
+
+            // Maintain compatibility with earlier artifacts
+            writeJSON([], 'hltv_matches_today.json');
           })().catch(e => {
             console.error('Top-level error:', e?.message);
             // Always produce artifacts so the job succeeds
-            try { fs.writeFileSync('crossref_matches.json', JSON.stringify({ error: e?.message }, null, 2)); } catch {}
+            try { fs.writeFileSync('hltv_top100.json', JSON.stringify({ error: e?.message }, null, 2)); } catch {}
+            try { fs.writeFileSync('hltv_teams_meta.json', JSON.stringify({ error: e?.message }, null, 2)); } catch {}
             try { fs.writeFileSync('hltv_matches_today.json', JSON.stringify([], null, 2)); } catch {}
             try { fs.writeFileSync('hltv_player_form.csv', ''); } catch {}
             try { fs.writeFileSync('hltv_projections.csv', ''); } catch {}
@@ -198,7 +168,8 @@ jobs:
         with:
           name: hltv_edges
           path: |
-            crossref_matches.json
+            hltv_top100.json
+            hltv_teams_meta.json
             hltv_matches_today.json
             hltv_player_form.csv
             hltv_projections.csv
