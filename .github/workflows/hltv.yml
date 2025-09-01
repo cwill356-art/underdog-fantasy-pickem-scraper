@@ -1,10 +1,10 @@
-name: HLTV projections (explicit player list + fuzzy + live HLTV search)
+name: HLTV projections (no CSV — names only)
 
 on:
   workflow_dispatch:
     inputs:
-      ud_csv_path:
-        description: "Path to your Underdog CSV (leave blank to auto-detect)"
+      player_list:
+        description: "Comma-separated player names (leave blank to use ALIASES keys)"
         required: false
         default: ""
       lookback_days:
@@ -33,37 +33,9 @@ jobs:
       - name: Install deps
         run: npm i hltv papaparse
 
-      # ---------- NEW DEBUG STEP ----------
-      - name: Debug CSV presence & preview
-        run: |
-          echo "== Working directory =="
-          pwd
-          echo "== Top-level files =="
-          ls -la
-          echo "== .github/workflows =="
-          ls -la .github/workflows || true
-
-          # Use input path if provided, else try common names at repo root
-          CSV_PATH="${{ inputs.ud_csv_path }}"
-          if [ -z "$CSV_PATH" ]; then
-            if [ -f "underdog_props_esports.csv" ]; then
-              CSV_PATH="underdog_props_esports.csv"
-            elif [ -f "underdog_props_esports 2.csv" ]; then
-              CSV_PATH="underdog_props_esports 2.csv"
-            fi
-          fi
-
-          echo "Resolved CSV_PATH: ${CSV_PATH:-<EMPTY>}"
-          if [ -n "$CSV_PATH" ] && [ -f "$CSV_PATH" ]; then
-            echo "== First 20 lines of $CSV_PATH =="
-            head -n 20 "$CSV_PATH" || true
-          else
-            echo "CSV NOT FOUND at resolved path."
-          fi
-
-      - name: Build CS2 projections (ALIASES + fuzzy + HLTV search)
+      - name: Project from player names only (ALIASES + fuzzy + HLTV search)
         env:
-          UD_CSV_PATH: ${{ inputs.ud_csv_path }}
+          PLAYER_LIST: ${{ inputs.player_list }}
           LOOKBACK_DAYS: ${{ inputs.lookback_days }}
           THROTTLE_MS: ${{ inputs.throttle_ms }}
         run: |
@@ -73,13 +45,14 @@ jobs:
           const Papa = require('papaparse');
 
           const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+          const UA = 'Mozilla/5.0 (compatible; HLTV-NamesOnly/1.0; +github-actions)';
           const norm = s => String(s||'')
             .toLowerCase()
             .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
             .replace(/\s+/g,'')
             .replace(/[^a-z0-9_]/g,'');
 
-          // ---------- FIXED ALIASES ----------
+          // ======= YOUR ALIASES (fixed) =======
           const ALIASES = {
             "adron": null, "aw": null, "artfr0st": null, "belchonokk": null, "batuuu": null,
             "brollan": null, "clasia": null, "cypher": null, "callme": null, "chop": null,
@@ -104,152 +77,141 @@ jobs:
             "xertion": 20424
           };
 
-          // ---------- helpers ----------
-          const impliedProb = (dec) => (isFinite(dec) && dec>0 ? 1/dec : 0.526);
-          const shrink = (rate,n,base,k)=>((n*rate+k*base)/((n+k)||1));
+          // ======= utils =======
           function erf(x){const s=x<0?-1:1;x=Math.abs(x);const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;const t=1/(1+p*x);const y=1-(((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t)*Math.exp(-x*x);return s*y;}
+          const shrink = (rate,n,base,k)=>((n*rate+k*base)/((n+k)||1));
           const writeCSV = (rows, path) => { try { fs.writeFileSync(path, Papa.unparse(rows||[],{quotes:true})); } catch { fs.writeFileSync(path,''); } };
-          const readCSVauto = (path) => { try { return Papa.parse(fs.readFileSync(path,'utf8'), {header:true,skipEmptyLines:true}).data||[]; } catch { return []; } };
+          async function withRetry(fn, {tries=3, delay=800}={}){ let last; for (let i=0;i<tries;i++){ try { return await fn(); } catch(e){ last=e; await sleep(delay); } } throw last; }
 
-          // Try to pick CSV: input path or common names at repo root
-          function resolveCsvPath() {
-            const inPath = (process.env.UD_CSV_PATH||'').trim();
-            if (inPath && fs.existsSync(inPath)) return inPath;
-            if (fs.existsSync('underdog_props_esports.csv')) return 'underdog_props_esports.csv';
-            if (fs.existsSync('underdog_props_esports 2.csv')) return 'underdog_props_esports 2.csv';
-            return '';
+          function extractPlayerIds(html){
+            const re=/\/player\/(\d+)\/[a-z0-9-]+/ig; let m; const out=new Set();
+            while((m=re.exec(html))!==null){ out.add(parseInt(m[1],10)); if(out.size>=5) break; }
+            return [...out];
+          }
+          async function hltvSearchByName(name){
+            const q=encodeURIComponent(String(name||'').trim());
+            const urls=[
+              `https://www.hltv.org/stats/players?search=${q}`,
+              `https://www.hltv.org/search?query=${q}`
+            ];
+            for(const url of urls){
+              try{
+                const res=await withRetry(()=>fetch(url,{headers:{'user-agent':UA}}));
+                if(!res.ok) continue;
+                const html=await res.text();
+                const ids=extractPlayerIds(html);
+                if(ids.length) return ids[0];
+              }catch(e){}
+              await sleep(400);
+            }
+            return null;
           }
 
-          (async () => {
-            const csvPath = resolveCsvPath();
+          (async ()=>{
             const LOOKBACK_DAYS = parseInt(process.env.LOOKBACK_DAYS||'60',10);
             const THROTTLE_MS   = parseInt(process.env.THROTTLE_MS||'350',10);
-            const EXPECTED_ROUNDS = 50;
 
-            if (!csvPath) {
-              console.error("CSV not found (input path empty or file missing).");
-              writeCSV([], 'ud_vs_model_edges.csv');
-              return;
-            }
-            console.log("Using CSV:", csvPath);
+            // Build target player list:
+            const input = (process.env.PLAYER_LIST||'').trim();
+            let players = input
+              ? input.split(',').map(s=>s.trim()).filter(Boolean)
+              : Object.keys(ALIASES); // default: all ALIASES keys
+            // de-dup & keep readable names for output
+            players = [...new Set(players)];
 
-            // parse UD CSV (tolerant to column names)
-            const udRaw = readCSVauto(csvPath);
-            const pick = (r,k)=>{ for(const key of k) if (r.hasOwnProperty(key)&&r[key]!=null&&String(r[key])!=='') return r[key]; return ''; };
-            const rows = udRaw.map(r=>{
-              const player = String(pick(r,['player','Player','selection_header','name','full_name'])).trim();
-              const sport  = String(pick(r,['sport_name','sport'])).trim();
-              const market = String(pick(r,['market','stat_name','category'])).trim();
-              let line = pick(r,['line','stat_value','value']);
-              if (!(isFinite(parseFloat(line)))) {
-                const ss = String(pick(r,['selection_subheader','display'])).toLowerCase();
-                const m = /(\d+(?:\.\d+)?)/.exec(ss);
-                line = m ? m[1] : '';
+            // Map to HLTV ids: ALIASES → live search
+            const mapped=[], unresolved=[];
+            for(const name of players){
+              const key=norm(name);
+              let id = Number.isFinite(+ALIASES[key]) ? +ALIASES[key] : null;
+              if(!id){
+                id = await hltvSearchByName(name);
+                await sleep(250);
               }
-              const dec  = parseFloat(pick(r,['decimal_price','decimalodds','decimal_odds']));
-              const side = String(pick(r,['side','choice'])).toLowerCase();
-              return { player, sport, market, line: parseFloat(line), dec_odds: isFinite(dec)?dec:1.90, side };
-            }).filter(x=>x.player && x.market && isFinite(x.line));
-
-            // quick log
-            console.log("Total parsed rows:", rows.length);
-            console.log("Sample:", rows.slice(0,5));
-
-            // CS2 only
-            const csRows = rows.filter(x=>{
-              const m = x.market.toLowerCase();
-              const isCS = (String(x.sport||'').toUpperCase()==='CS') || m.includes('kills_on_maps_1_2') || m.includes('headshots_on_maps_1_2');
-              const okMkt = m.includes('kills_on_maps_1_2') || m.includes('headshots_on_maps_1_2');
-              return isCS && okMkt;
-            });
-            console.log("CS2 rows:", csRows.length);
-            if (!csRows.length) {
-              writeCSV([], 'ud_vs_model_edges.csv');
-              return;
+              if(id) mapped.push({ name, hltv_id:id, source: Number.isFinite(+ALIASES[key])?'alias':'search' });
+              else unresolved.push({ name });
+              await sleep(THROTTLE_MS);
             }
 
-            // map via ALIASES only (simple)
-            const mapped = csRows.map(r=>{
-              const id = Number.isFinite(+ALIASES[norm(r.player)]) ? +ALIASES[norm(r.player)] : null;
-              return { ...r, hltv_id:id };
-            });
-
-            // fetch HLTV stats for resolved IDs
+            // Pull stats
             const today = new Date();
             const startDate = new Date(today.getTime() - LOOKBACK_DAYS*86400000).toISOString().slice(0,10);
             const endDate   = today.toISOString().slice(0,10);
+
             const stats=[];
-            for (const m of mapped.filter(x=>x.hltv_id)) {
-              try {
-                const s = await HLTV.getPlayerStats({ id: m.hltv_id, startDate, endDate });
+            for(const m of mapped){
+              try{
+                const s = await withRetry(()=>HLTV.getPlayerStats({ id:m.hltv_id, startDate, endDate }), {tries:3, delay:900});
                 stats.push({
-                  playerId:m.hltv_id,
-                  nickname:s?.player?.nickname || m.player,
-                  team:s?.team?.name||'',
+                  playerId:m.hltv_id, source:m.source,
+                  nickname:s?.player?.nickname || m.name,
+                  realname:s?.player?.name || '',
+                  team:s?.team?.name || '',
                   maps:s?.overview?.mapsPlayed,
                   kpr:s?.overview?.kpr,
                   hsPct:s?.overview?.hsPercentage,
                   adr:s?.overview?.adr,
                   rating:s?.overview?.rating1
                 });
-              } catch(e){ console.error("Stats fail for",m.player,e.message); }
+              }catch(e){
+                stats.push({ playerId:m.hltv_id, nickname:m.name, team:'', maps:0, kpr:'', hsPct:'', adr:'', rating:'', source:m.source, error:e.message });
+              }
               await sleep(THROTTLE_MS);
             }
-            writeCSV(stats,'hltv_player_form.csv');
 
-            // projections + edges
-            function tailProbOver(line, mu, variance) {
-              const sigma = Math.sqrt(Math.max(variance, 1e-6));
-              const z = (line - mu)/sigma;
-              const pOver = 1 - 0.5*(1+erf(z/Math.SQRT2));
-              return { pOver, pUnder: 1 - pOver, sigma };
-            }
-
-            const pf = new Map(stats.map(r=>[norm(r.nickname), r]));
-            const edges=[];
-            for (const u of mapped) {
-              const f = pf.get(norm(u.player));
-              if (!f || !isFinite(u.line)) continue;
-              const maps=+f.maps||0, kpr=+f.kpr||0.68, hs=+f.hsPct||0.46;
-              const kprAdj= (maps||0) ? ((maps*kpr + (maps<25?40:25)*0.68)/((maps+(maps<25?40:25))||1)) : 0.68;
-              const hsAdj = (maps||0) ? ((maps*hs  + (maps<25?60:40)*0.46)/((maps+(maps<25?60:40))||1)) : 0.46;
-              const muKills = 50 * kprAdj;
-
-              let mu, variance;
-              const mkt = u.market.toLowerCase();
-              if (mkt.includes('kills_on_maps_1_2')) {
-                mu = muKills;
-                variance = 50 * kprAdj * (1 - kprAdj) + 3.0;
-              } else if (mkt.includes('headshots_on_maps_1_2')) {
-                mu = muKills * hsAdj;
-                variance = muKills * hsAdj * (1 - hsAdj) + 2.0;
-              } else continue;
-
-              const { pOver, pUnder, sigma } = tailProbOver(u.line, mu, variance);
-              const modelProb = u.side==='over' ? pOver : pUnder;
-              const edge = modelProb - impliedProb(u.dec_odds);
-
-              edges.push({
-                player:u.player, team:f.team||'', market:u.market, side:u.side,
-                ud_line:+u.line, our_mu:+mu.toFixed(2), our_sigma:+sigma.toFixed(2),
-                prob_over:+pOver.toFixed(3), prob_under:+pUnder.toFixed(3),
-                model_prob:+modelProb.toFixed(3), edge:+edge.toFixed(3),
-                sample_maps:f.maps
+            // Conservative projections (no opponent context)
+            const leagueKPR=0.68, leagueHS=0.46, EXPECTED_ROUNDS=50;
+            const projections=[];
+            for(const r of stats){
+              const maps=+r.maps||0;
+              const kpr =+r.kpr || leagueKPR;
+              const hs  =+r.hsPct|| leagueHS;
+              const kprAdj=shrink(kpr,maps,leagueKPR,maps<25?40:25);
+              const hsAdj =shrink(hs, maps,leagueHS, maps<25?60:40);
+              const muKills=EXPECTED_ROUNDS*kprAdj;
+              projections.push({
+                player:r.nickname, team:r.team, maps,
+                kprAdj:+kprAdj.toFixed(3), hsAdj:+hsAdj.toFixed(3),
+                projKills:+muKills.toFixed(1), projHS:+(muKills*hsAdj).toFixed(1),
+                rating:r.rating||'', adr:r.adr||'', id:r.playerId, id_source:r.source
               });
             }
 
-            edges.sort((a,b)=>b.edge-a.edge);
-            writeCSV(edges,'ud_vs_model_edges.csv');
-            console.log("Edges rows:", edges.length);
-          })();
+            // Outputs
+            const mappedOut = mapped.map(x=>({player:x.name, hltv_id:x.hltv_id, source:x.source}));
+            writeCSV(mappedOut, 'names_mapped.csv');
+            writeCSV(unresolved, 'names_unresolved.csv');
+            writeCSV(stats, 'hltv_player_form.csv');
+            writeCSV(projections, 'hltv_projections.csv');
+
+            // Also create a helper template you can fill with book lines later:
+            const tmpl = projections.map(p=>({
+              player:p.player,
+              market_example:'kills_on_maps_1_2',
+              our_proj:p.projKills
+            }));
+            writeCSV(tmpl, 'edges_template_fill_lines.csv');
+
+            console.log(`Done. Names in: ${players.length}, mapped: ${mapped.length}, unresolved: ${unresolved.length}, projections: ${projections.length}`);
+          })().catch(e=>{
+            console.error('Top-level error:', e?.message);
+            try{ fs.writeFileSync('hltv_projections.csv',''); }catch{}
+            try{ fs.writeFileSync('hltv_player_form.csv',''); }catch{}
+            try{ fs.writeFileSync('names_mapped.csv',''); }catch{}
+            try{ fs.writeFileSync('names_unresolved.csv',''); }catch{}
+            try{ fs.writeFileSync('edges_template_fill_lines.csv',''); }catch{}
+            process.exitCode=0;
+          });
           JS
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: hltv_from_ud_edges
+          name: hltv_names_only_outputs
           path: |
-            ${{ inputs.ud_csv_path }}
+            names_mapped.csv
+            names_unresolved.csv
             hltv_player_form.csv
-            ud_vs_model_edges.csv
+            hltv_projections.csv
+            edges_template_fill_lines.csv
           if-no-files-found: warn
