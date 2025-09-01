@@ -1,6 +1,27 @@
-name: HLTV Top-100 ingest + projections
+name: HLTV Top-100 + Custom Pages ingest
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      team_ids:
+        description: "Extra HLTV team ids (comma-separated). Example: 9565"
+        required: false
+        default: "9565"
+      player_ids:
+        description: "Extra HLTV player ids (comma-separated). Example: 15165"
+        required: false
+        default: "15165"
+      player_windows_json:
+        description: "JSON array of {playerId,startDate,endDate}"
+        required: false
+        default: '[{"playerId":15165,"startDate":"2025-06-01","endDate":"2025-09-01"},{"playerId":15165,"startDate":"2025-08-01","endDate":"2025-09-01"},{"playerId":15165,"startDate":"2025-03-01","endDate":"2025-09-01"}]'
+      days_ahead:
+        description: "Cross-ref matches: how many days ahead to include"
+        required: false
+        default: "7"
+      save_example_pages:
+        description: "Also download the example pages (true/false)"
+        required: false
+        default: "true"
 
 jobs:
   run:
@@ -15,22 +36,29 @@ jobs:
       - name: Install deps
         run: npm i hltv papaparse
 
-      - name: Fetch HLTV Top-100 → rosters → player stats → projections (fault-tolerant)
+      - name: Ingest Top-100, team stats, player stats, pages, projections
+        env:
+          TEAM_IDS: ${{ inputs.team_ids }}
+          PLAYER_IDS: ${{ inputs.player_ids }}
+          PLAYER_WINDOWS_JSON: ${{ inputs.player_windows_json }}
+          DAYS_AHEAD: ${{ inputs.days_ahead }}
+          SAVE_EXAMPLE_PAGES: ${{ inputs.save_example_pages }}
         run: |
           node - <<'JS'
-          // CJS-friendly imports
+          // ----------------- Imports (CJS-friendly) -----------------
           const { HLTV } = require('hltv');
           const fs = require('fs');
           const Papa = require('papaparse');
 
-          // Gentle pacing to avoid Cloudflare
-          const sleep = ms => new Promise(r => setTimeout(r, ms));
+          // Node 20 has global fetch
+          const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-          // Utils
+          // ----------------- Helpers -----------------
           const writeJSON = (obj, path) => {
             try { fs.writeFileSync(path, JSON.stringify(obj, null, 2)); }
             catch (e) { console.error('writeJSON error', path, e?.message); }
           };
+
           const writeCSV = (rows, path) => {
             try {
               const csv = Papa.unparse(rows || [], { quotes: true });
@@ -41,125 +69,269 @@ jobs:
             }
           };
 
-          (async () => {
-            let ranking = [];
-            let teamIds = [];
-            let teamDetails = [];
-            let playerIds = [];
-            let stats = [];
+          const parseIdList = (s) =>
+            (s || '')
+              .split(',')
+              .map(x => x.trim())
+              .filter(Boolean)
+              .map(x => parseInt(x, 10))
+              .filter(x => Number.isFinite(x));
 
-            // 1) Get HLTV Top-100 teams (ranking)
+          const todayISO = new Date().toISOString().slice(0,10);
+          const sinceISO = new Date(Date.now() - 60*24*3600*1000).toISOString().slice(0,10);
+
+          const leagueKPR = 0.68, leagueHS = 0.46;
+          const shrink = (rate, n, base, k) => ((n*rate + k*base)/((n+k)||1));
+
+          const envTeamIds = parseIdList(process.env.TEAM_IDS);
+          const envPlayerIds = parseIdList(process.env.PLAYER_IDS);
+          let playerWindows = [];
+          try { playerWindows = JSON.parse(process.env.PLAYER_WINDOWS_JSON || '[]'); } catch {}
+          const DAYS_AHEAD = parseInt(process.env.DAYS_AHEAD || '7', 10);
+          const SAVE_PAGES = String(process.env.SAVE_EXAMPLE_PAGES || 'true').toLowerCase() === 'true';
+
+          const now = Date.now();
+          const cutoff = now + DAYS_AHEAD*24*3600*1000;
+
+          // ----------------- Step 0: Save the example pages you listed -----------------
+          async function downloadExamplePages() {
+            const targets = [
+              // Team stats page (Vitality)
+              { url: 'https://www.hltv.org/stats/teams/9565/vitality', out: 'page_team_9565_vitality.html' },
+              // Betting analytics page (Vitality vs FaZe – BLAST Open London 2025)
+              { url: 'https://www.hltv.org/betting/analytics/2384842/vitality-vs-faze-blast-open-london-2025', out: 'page_betting_analytics_2384842.html' },
+              // Matches index
+              { url: 'https://www.hltv.org/matches', out: 'page_matches_index.html' },
+              // Player windows (blameF examples you provided)
+              { url: 'https://www.hltv.org/stats/players/15165/blamef?startDate=2025-06-01&endDate=2025-09-01', out: 'page_player_15165_2025-06-01_2025-09-01.html' },
+              { url: 'https://www.hltv.org/stats/players/15165/blamef?startDate=2025-08-01&endDate=2025-09-01', out: 'page_player_15165_2025-08-01_2025-09-01.html' },
+              { url: 'https://www.hltv.org/stats/players/15165/blamef?startDate=2025-03-01&endDate=2025-09-01', out: 'page_player_15165_2025-03-01_2025-09-01.html' },
+            ];
+            for (const t of targets) {
+              try {
+                const res = await fetch(t.url, { headers: { 'user-agent': 'github-action-hltv-ingest' }});
+                const text = await res.text();
+                fs.writeFileSync(t.out, text);
+                await sleep(400);
+              } catch (e) {
+                console.error('Download fail', t.url, e?.message);
+              }
+            }
+          }
+
+          // ----------------- Step 1: Cross-ref matches for next N days -----------------
+          async function getUpcomingMatchesCrossRef() {
+            const out = { from: 'hosted', matches: [] };
             try {
-              // HLTV.getTeamRanking() returns array with { team: { id, name }, place, points, ... }
+              const res = await fetch('https://hltv-api.vercel.app/api/matches', { headers: { 'user-agent': 'github-action-hltv-ingest' }});
+              const data = await res.json();
+              const m = (Array.isArray(data) ? data : []).filter(m => {
+                if (!m?.date) return true;
+                const t = isNaN(+m.date) ? Date.parse(m.date) : +m.date;
+                return isFinite(t) && t <= cutoff && t >= now - 24*3600*1000;
+              });
+              out.matches = m;
+              if (m.length) return out;
+            } catch (e) {
+              console.error('Hosted schedule fetch failed:', e?.message);
+            }
+            // fallback to HLTV lib
+            try {
+              const mAll = await HLTV.getMatches();
+              const m = (mAll || []).filter(m => m?.date && +new Date(m.date) <= cutoff && +new Date(m.date) >= now - 24*3600*1000);
+              out.from = 'hltv';
+              out.matches = m.map(x => ({ id: x.id, team1: x.team1, team2: x.team2, date: x.date }));
+            } catch (e) {
+              console.error('HLTV.getMatches fallback failed:', e?.message);
+              out.from = 'none';
+              out.matches = [];
+            }
+            return out;
+          }
+
+          (async () => {
+            if (SAVE_PAGES) {
+              await downloadExamplePages();
+            }
+
+            const cross = await getUpcomingMatchesCrossRef();
+            writeJSON(cross, 'crossref_matches.json');
+
+            // ----------------- Step 2: HLTV Top-100 team IDs -----------------
+            let ranking = [];
+            let topTeamIds = [];
+            try {
               const all = await HLTV.getTeamRanking();
               ranking = (all || []).slice(0, 100);
-              teamIds = ranking.map(r => r?.team?.id).filter(Boolean);
-              writeJSON({ count: teamIds.length, sample: ranking.slice(0,5) }, 'hltv_top100.json');
+              topTeamIds = ranking.map(r => r?.team?.id).filter(Boolean);
+              writeJSON({ total: topTeamIds.length, sample: ranking.slice(0,5) }, 'hltv_top100.json');
             } catch (e) {
               console.error('getTeamRanking failed:', e?.message);
               writeJSON({ error: e?.message }, 'hltv_top100.json');
-              // If we can't get ranking, bail gracefully with empty artifacts
-              writeJSON([], 'hltv_matches_today.json');
-              writeCSV([], 'hltv_player_form.csv');
-              writeCSV([], 'hltv_projections.csv');
-              return;
             }
 
-            // 2) For each team id → get roster (players)
+            // Pull team ids from cross-ref names if present
+            const nameToId = {};
             try {
-              for (const id of teamIds) {
+              const mAll = await HLTV.getMatches();
+              for (const m of mAll || []) {
+                if (m?.team1?.name && m?.team1?.id) nameToId[m.team1.name.toLowerCase()] = m.team1.id;
+                if (m?.team2?.name && m?.team2?.id) nameToId[m.team2.name.toLowerCase()] = m.team2.id;
+              }
+            } catch (e) {
+              console.error('getMatches for name->id enrichment failed:', e?.message);
+            }
+
+            const crossNames = new Set();
+            for (const m of cross.matches) {
+              if (m?.team1?.name) crossNames.add(m.team1.name.toLowerCase());
+              if (m?.team2?.name) crossNames.add(m.team2.name.toLowerCase());
+            }
+            const crossIds = [...crossNames].map(nm => nameToId[nm]).filter(Boolean);
+
+            // Union: Top-100 + cross-ref + env input
+            const teamIds = [...new Set([ ...topTeamIds, ...crossIds, ...envTeamIds ])];
+
+            // ----------------- Step 3: Team STATS (preferred) + Team ROSTERS (fallback) -----------------
+            let teamMeta = [];
+            let rosterPlayerIds = new Set();
+
+            for (const id of teamIds) {
+              let teamName = '';
+              try {
+                // Preferred: team stats
+                const tStats = await HLTV.getTeamStats({ id });
+                teamName = tStats?.team?.name || '';
+                teamMeta.push({
+                  id, name: teamName, country: tStats?.team?.country || '',
+                  ranking: tStats?.ranking || '', // may be undefined
+                  statsSampleMaps: tStats?.events?.reduce((acc,e)=>acc+(e?.maps||0),0) || '',
+                });
+                // Try to infer roster from stats 'lineup' if available
+                if (Array.isArray(tStats?.lineup)) {
+                  for (const p of tStats.lineup) {
+                    if (p?.id) rosterPlayerIds.add(p.id);
+                  }
+                }
+              } catch (e) {
+                console.error('getTeamStats fail', id, e?.message);
+              }
+
+              // Fallback: team roster via getTeam (may be CF sensitive)
+              if (rosterPlayerIds.size < 5) {
                 try {
                   const t = await HLTV.getTeam({ id });
-                  teamDetails.push({ id, name: t?.name || '', players: t?.players || [] });
+                  teamName = teamName || t?.name || '';
+                  for (const p of (t?.players || [])) {
+                    if (p?.id) rosterPlayerIds.add(p.id);
+                  }
                 } catch (e) {
                   console.error('getTeam fail', id, e?.message);
-                  teamDetails.push({ id, name: '', players: [] });
                 }
-                await sleep(300);
               }
-              writeJSON({ teams: teamDetails.length }, 'hltv_teams_meta.json');
-              playerIds = [...new Set(teamDetails.flatMap(t => (t.players || []).map(p => p.id)).filter(Boolean))];
-            } catch (e) {
-              console.error('Team roster pipeline failed:', e?.message);
+
+              await sleep(300);
             }
+            writeJSON({ teamsProcessed: teamIds.length, teamMetaSample: teamMeta.slice(0,5) }, 'hltv_teams_meta.json');
 
-            // 3) Player stats (last 60 days) for all unique players seen in Top-100 rosters
-            try {
-              const todayISO = new Date().toISOString().slice(0,10);
-              const sinceISO = new Date(Date.now() - 60*24*3600*1000).toISOString().slice(0,10);
-
-              for (const pid of playerIds) {
-                try {
-                  const s = await HLTV.getPlayerStats({ id: pid, startDate: sinceISO, endDate: todayISO });
-                  stats.push({
-                    playerId: pid,
-                    nickname: s?.player?.nickname,
-                    team:     s?.team?.name,
-                    maps:     s?.overview?.mapsPlayed,
-                    kpr:      s?.overview?.kpr,            // kills per round
-                    hsPct:    s?.overview?.hsPercentage,   // headshot percentage
-                    adr:      s?.overview?.adr,
-                    rating:   s?.overview?.rating1
-                  });
-                } catch (e) {
-                  console.error('getPlayerStats fail', pid, e?.message);
-                }
-                await sleep(300);
-              }
-            } catch (e) {
-              console.error('Player stats pipeline failed:', e?.message);
-            }
-
-            // Save the raw player form table
-            writeCSV(stats, 'hltv_player_form.csv');
-
-            // 4) Conservative projections (CS2 only; independent of UD)
-            try {
-              const shrink = (rate, n, base, k) => ((n*rate + k*base)/((n+k)||1));
-              const leagueKPR = 0.68, leagueHS = 0.46;      // conservative baselines
-              const out = [];
-
-              for (const r of stats) {
-                const maps = +r.maps || 0;
-                const kpr  = +r.kpr  || leagueKPR;
-                const hs   = +r.hsPct || leagueHS;
-
-                // Heavier regression when sample is small/new team
-                const kprAdj = shrink(kpr, maps, leagueKPR, maps < 25 ? 40 : 25);
-                const hsAdj  = shrink(hs,  maps, leagueHS,  maps < 25 ? 60 : 40);
-
-                // Balanced baseline ≈ 50 rounds across Maps 1+2 (MR12)
-                const muKills = 50 * kprAdj;
-
-                out.push({
-                  player: r.nickname,
-                  team:   r.team,
-                  maps,
-                  kprAdj:  +kprAdj.toFixed(3),
-                  hsAdj:   +hsAdj.toFixed(3),
-                  projKills: +muKills.toFixed(1),
-                  projHS:    +(muKills*hsAdj).toFixed(1)
+            // ----------------- Step 4: Player stats (base window: last 60 days) -----------------
+            const basePlayers = new Set([...rosterPlayerIds, ...envPlayerIds]);
+            const baseStats = [];
+            for (const pid of basePlayers) {
+              try {
+                const s = await HLTV.getPlayerStats({ id: pid, startDate: sinceISO, endDate: todayISO });
+                baseStats.push({
+                  playerId: pid,
+                  nickname: s?.player?.nickname,
+                  team:     s?.team?.name,
+                  maps:     s?.overview?.mapsPlayed,
+                  kpr:      s?.overview?.kpr,
+                  hsPct:    s?.overview?.hsPercentage,
+                  adr:      s?.overview?.adr,
+                  rating:   s?.overview?.rating1,
+                  startDate: sinceISO,
+                  endDate:   todayISO,
+                  windowTag: 'last60d'
                 });
+              } catch (e) {
+                console.error('getPlayerStats (last60d) fail', pid, e?.message);
               }
-
-              writeCSV(out, 'hltv_projections.csv');
-              console.log(`Top-100 teams processed. Teams: ${teamIds.length}, Players: ${playerIds.length}, Projections: ${out.length}`);
-            } catch (e) {
-              console.error('Projection step failed:', e?.message);
-              writeCSV([], 'hltv_projections.csv');
+              await sleep(300);
             }
 
-            // Maintain compatibility with earlier artifacts
-            writeJSON([], 'hltv_matches_today.json');
+            // ----------------- Step 5: Player stats for custom windows -----------------
+            const windowStats = [];
+            for (const w of playerWindows) {
+              const pid = Number(w.playerId);
+              const startDate = w.startDate;
+              const endDate = w.endDate;
+              if (!Number.isFinite(pid) || !startDate || !endDate) continue;
+              try {
+                const s = await HLTV.getPlayerStats({ id: pid, startDate, endDate });
+                windowStats.push({
+                  playerId: pid,
+                  nickname: s?.player?.nickname,
+                  team:     s?.team?.name,
+                  maps:     s?.overview?.mapsPlayed,
+                  kpr:      s?.overview?.kpr,
+                  hsPct:    s?.overview?.hsPercentage,
+                  adr:      s?.overview?.adr,
+                  rating:   s?.overview?.rating1,
+                  startDate, endDate,
+                  windowTag: `${startDate}_${endDate}`
+                });
+              } catch (e) {
+                console.error('getPlayerStats (custom) fail', pid, startDate, endDate, e?.message);
+              }
+              await sleep(300);
+            }
+
+            // Save raw tables
+            writeCSV(baseStats,   'hltv_player_form.csv');
+            writeCSV(windowStats, 'hltv_player_windows.csv');
+
+            // ----------------- Step 6: Conservative projections from baseStats -----------------
+            const outProj = [];
+            for (const r of baseStats) {
+              const maps = +r.maps || 0;
+              const kpr  = +r.kpr  || leagueKPR;
+              const hs   = +r.hsPct || leagueHS;
+              const kprAdj = shrink(kpr, maps, leagueKPR, maps < 25 ? 40 : 25);
+              const hsAdj  = shrink(hs,  maps, leagueHS,  maps < 25 ? 60 : 40);
+              // Balanced baseline ≈ 50 rounds across Maps 1+2 (MR12)
+              const muKills = 50 * kprAdj;
+              outProj.push({
+                playerId: r.playerId,
+                player: r.nickname,
+                team:   r.team,
+                maps,
+                kprAdj:  +kprAdj.toFixed(3),
+                hsAdj:   +hsAdj.toFixed(3),
+                projKills: +muKills.toFixed(1),
+                projHS:    +(muKills*hsAdj).toFixed(1),
+                windowTag: r.windowTag
+              });
+            }
+            writeCSV(outProj, 'hltv_projections.csv');
+
+            console.log(`Done. Teams: ${teamIds.length}, Base players: ${basePlayers.size}, Base stats: ${baseStats.length}, Window stats: ${windowStats.length}, Projections: ${outProj.length}`);
           })().catch(e => {
             console.error('Top-level error:', e?.message);
-            // Always produce artifacts so the job succeeds
+            // Ensure artifacts exist
             try { fs.writeFileSync('hltv_top100.json', JSON.stringify({ error: e?.message }, null, 2)); } catch {}
             try { fs.writeFileSync('hltv_teams_meta.json', JSON.stringify({ error: e?.message }, null, 2)); } catch {}
+            try { fs.writeFileSync('crossref_matches.json', JSON.stringify({ error: e?.message }, null, 2)); } catch {}
             try { fs.writeFileSync('hltv_matches_today.json', JSON.stringify([], null, 2)); } catch {}
+            try { fs.writeFileSync('page_team_9565_vitality.html', ''); } catch {}
+            try { fs.writeFileSync('page_betting_analytics_2384842.html', ''); } catch {}
+            try { fs.writeFileSync('page_matches_index.html', ''); } catch {}
+            try { fs.writeFileSync('page_player_15165_2025-06-01_2025-09-01.html', ''); } catch {}
+            try { fs.writeFileSync('page_player_15165_2025-08-01_2025-09-01.html', ''); } catch {}
+            try { fs.writeFileSync('page_player_15165_2025-03-01_2025-09-01.html', ''); } catch {}
             try { fs.writeFileSync('hltv_player_form.csv', ''); } catch {}
+            try { fs.writeFileSync('hltv_player_windows.csv', ''); } catch {}
             try { fs.writeFileSync('hltv_projections.csv', ''); } catch {}
-            process.exitCode = 0;
+            process.exitCode = 0; // don't fail the job
           });
           JS
 
@@ -170,7 +342,15 @@ jobs:
           path: |
             hltv_top100.json
             hltv_teams_meta.json
+            crossref_matches.json
             hltv_matches_today.json
             hltv_player_form.csv
+            hltv_player_windows.csv
             hltv_projections.csv
+            page_team_9565_vitality.html
+            page_betting_analytics_2384842.html
+            page_matches_index.html
+            page_player_15165_2025-06-01_2025-09-01.html
+            page_player_15165_2025-08-01_2025-09-01.html
+            page_player_15165_2025-03-01_2025-09-01.html
           if-no-files-found: warn
