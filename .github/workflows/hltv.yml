@@ -1,4 +1,4 @@
-name: HLTV projections from YOUR Underdog CSV (auto-detect + player mapping)
+name: HLTV projections (autogen aliases from CSV)
 on:
   workflow_dispatch:
     inputs:
@@ -32,27 +32,25 @@ jobs:
       - name: Install deps
         run: npm i hltv papaparse
 
-      - name: Build CS2 projections (auto-detect CSV, use 'player' column)
+      - name: Build CS2 projections + autogen alias file
         env:
           UD_CSV_PATH: ${{ inputs.ud_csv_path }}
           LOOKBACK_DAYS: ${{ inputs.lookback_days }}
           THROTTLE_MS: ${{ inputs.throttle_ms }}
         run: |
           node - <<'JS'
-          // ================== Imports ==================
-          const { HLTV } = require('hltv');   // official wrapper
+          const { HLTV } = require('hltv');
           const fs = require('fs');
           const Papa = require('papaparse');
 
-          // ================== Helpers ==================
           const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
           const norm = s => String(s||'')
             .toLowerCase()
-            .normalize('NFKD').replace(/[\u0300-\u036f]/g,'') // strip accents
+            .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
             .replace(/\s+/g,'')
-            .replace(/[^a-z0-9_]/g,''); // keep a-z0-9 and underscore
+            .replace(/[^a-z0-9_]/g,'');
 
-          // mini-glob over repo without extra deps
+          // small repo walk to auto-detect CSV
           function listFiles(root='.') {
             const out=[];
             function walk(dir, depth=0){
@@ -67,7 +65,6 @@ jobs:
             walk('.');
             return out;
           }
-
           function firstThatMatches(paths, patterns) {
             for (const pat of patterns) {
               const rx = new RegExp(pat.replace(/\*/g,'.*'), 'i');
@@ -77,12 +74,6 @@ jobs:
             return null;
           }
 
-          const impliedProb = (dec) => (isFinite(dec) && dec>0 ? 1/dec : 0.526);
-          const shrink = (rate, n, base, k) => ((n*rate + k*base) / ((n+k)||1));
-          function erf(x){ const s=x<0?-1:1; x=Math.abs(x);
-            const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
-            const t=1/(1+p*x); const y=1-(((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t)*Math.exp(-x*x); return s*y; }
-
           const writeCSV = (rows, path) => {
             try { const csv = Papa.unparse(rows || [], { quotes: true }); fs.writeFileSync(path, csv); }
             catch (e) { console.error('writeCSV error for', path, e?.message); try { fs.writeFileSync(path, ''); } catch {} }
@@ -91,287 +82,283 @@ jobs:
             try { const txt = fs.readFileSync(path, 'utf8'); const parsed = Papa.parse(txt, { header: true, skipEmptyLines: true }); return parsed.data || []; }
             catch (e) { console.error('Could not read CSV at', path, e?.message); return []; }
           };
-          async function withRetry(fn, {tries=3, delay=400}={}){ let last; for (let i=0;i<tries;i++){ try { return await fn(); } catch(e){ last=e; await sleep(delay); } } throw last; }
+          async function withRetry(fn, {tries=3, delay=450}={}){ let last; for (let i=0;i<tries;i++){ try { return await fn(); } catch(e){ last=e; await sleep(delay); } } throw last; }
+          function erf(x){ const s=x<0?-1:1; x=Math.abs(x);
+            const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+            const t=1/(1+p*x); const y=1-(((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t)*Math.exp(-x*x); return s*y; }
+          const impliedProb = (d) => (isFinite(d)&&d>0?1/d:0.526);
+          const shrink = (rate,n,base,k)=>((n*rate+k*base)/((n+k)||1));
 
-          // ================== Main ==================
           (async () => {
-            const INPUT_PATH = (process.env.UD_CSV_PATH||'').trim();
-            const LOOKBACK_DAYS = parseInt(process.env.LOOKBACK_DAYS||'60',10);
-            const THROTTLE_MS   = parseInt(process.env.THROTTLE_MS  ||'350',10);
+            const INPUT_PATH   = (process.env.UD_CSV_PATH||'').trim();
+            const LOOKBACK_DAYS= parseInt(process.env.LOOKBACK_DAYS||'60',10);
+            const THROTTLE_MS  = parseInt(process.env.THROTTLE_MS  ||'350',10);
+            const leagueKPR = 0.68, leagueHS = 0.46, EXPECTED_ROUNDS = 50;
 
-            // Conservative baselines
-            const leagueKPR = 0.68, leagueHS = 0.46;
-            const EXPECTED_ROUNDS = 50; // Maps 1+2 baseline (MR12)
-
-            // 0) Resolve CSV path (auto-detect if blank or missing)
+            // 0) Resolve CSV path
             let csvPath = INPUT_PATH;
             if (!csvPath || !fs.existsSync(csvPath)) {
               const files = listFiles('.');
               csvPath = firstThatMatches(files, [
-                'underdog_props_esports*.csv',
-                '*underdog*props*esports*.csv',
-                '*underdog*esports*.csv',
-                '*underdog*props*.csv'
+                '^underdog_props_esports.*\\.csv$',
+                'underdog.*props.*esports.*\\.csv$'
               ]) || '';
-              if (!csvPath) {
-                console.error('Could not find UD CSV. Searched common patterns. Provide ud_csv_path when running the workflow.');
-                writeCSV([], 'hl_players_mapped.csv');
-                writeCSV([], 'hl_players_unmapped.csv');
-                writeCSV([], 'hltv_player_form.csv');
-                writeCSV([], 'hltv_projections.csv');
-                writeCSV([], 'ud_vs_model_edges.csv');
-                return;
-              }
             }
-            console.log('Using UD CSV:', csvPath);
-
-            const today = new Date();
-            const startDate = new Date(today.getTime() - LOOKBACK_DAYS*24*3600*1000).toISOString().slice(0,10);
-            const endDate   = today.toISOString().slice(0,10);
-
-            // 1) Load UD CSV (player is the source of truth)
-            const ud = readCSVauto(csvPath);
-            console.log('UD rows found:', ud.length, 'from', csvPath);
-
-            const pick = (row, keys) => { for (const k of keys) if (row.hasOwnProperty(k) && row[k] != null && row[k] !== '') return row[k]; return ''; };
-
-            const rows = ud.map(r => {
-              const player = String(pick(r, ['player'])).trim();      // <-- use 'player' column only
-              const sport  = String(pick(r, ['sport_name','sport'])).trim();
-              const market = String(pick(r, ['market'])).trim();
-              let line = pick(r, ['line']);
-              if (!(isFinite(parseFloat(line)))) {
-                const ss = String(pick(r, ['selection_subheader','display'])).toLowerCase();
-                const m = /(\d+(?:\.\d+)?)/.exec(ss);
-                line = m ? m[1] : '';
-              }
-              line = parseFloat(line);
-              const side = String(pick(r, ['side'])).toLowerCase();
-              const dec  = parseFloat(pick(r, ['decimal_price']));
-              return { player, sport, market, side, line, dec_odds: isFinite(dec)?dec:1.90 };
-            }).filter(x => x.player && x.market);
-
-            // Filter: CS only + markets we support
-            const csRows = rows.filter(x => {
-              const isCS = String(x.sport||'').toUpperCase() === 'CS' || /kills_on_maps_1_2|headshots_on_maps_1_2/i.test(x.market);
-              const m = x.market.toLowerCase();
-              const isMkt = m.includes('kills_on_maps_1_2') || m.includes('headshots_on_maps_1_2');
-              return isCS && isMkt && isFinite(x.line);
-            });
-
-            console.log('CS2 rows to project:', csRows.length);
-            console.log('Sample parsed (first 8):', csRows.slice(0,8).map(r => ({player:r.player, market:r.market, line:r.line, dec:r.dec_odds})));
-
-            if (!csRows.length) {
-              console.warn('No Counter-Strike rows to process; writing empty artifacts.');
+            if (!csvPath) {
+              console.error('CSV not found. Set ud_csv_path when running, or commit the file.');
               writeCSV([], 'hl_players_mapped.csv');
               writeCSV([], 'hl_players_unmapped.csv');
               writeCSV([], 'hltv_player_form.csv');
               writeCSV([], 'hltv_projections.csv');
               writeCSV([], 'ud_vs_model_edges.csv');
+              fs.writeFileSync('aliases_autogen.js', 'module.exports = {};\\n');
               return;
             }
+            console.log('Using UD CSV:', csvPath);
 
-            // 2) Map UD 'player' -> HLTV IDs (nickname or real name)
-            const manualMap = new Map();
-            if (fs.existsSync('player_aliases.csv')) {
-              for (const r of readCSVauto('player_aliases.csv')) {
-                const nm = norm(r.ud_name);
-                const pid = parseInt(r.hltv_id, 10);
-                if (nm && Number.isFinite(pid)) manualMap.set(nm, pid);
+            // 1) Load & parse CSV using 'player' column
+            const ud = readCSVauto(csvPath);
+            console.log('UD rows found:', ud.length);
+
+            const pick = (r,k)=>{ for(const key of k) if (r.hasOwnProperty(key)&&r[key]!=null&&r[key]!=='') return r[key]; return ''; };
+            const parsed = ud.map(r=>{
+              const player = String(pick(r,['player'])).trim(); // <-- source of truth
+              const sport  = String(pick(r,['sport_name','sport'])).trim();
+              const market = String(pick(r,['market'])).trim();
+              let line = pick(r,['line']);
+              if (!(isFinite(parseFloat(line)))) {
+                const ss = String(pick(r,['selection_subheader','display'])).toLowerCase();
+                const m = /(\d+(?:\.\d+)?)/.exec(ss);
+                line = m ? m[1] : '';
+              }
+              line = parseFloat(line);
+              const side = String(pick(r,['side'])).toLowerCase();
+              const dec  = parseFloat(pick(r,['decimal_price']));
+              return { player, sport, market, side, line, dec_odds: isFinite(dec)?dec:1.90 };
+            }).filter(x=>x.player && x.market);
+
+            // filter to CS props we model
+            const csRows = parsed.filter(x=>{
+              const isCS = String(x.sport||'').toUpperCase()==='CS' || /kills_on_maps_1_2|headshots_on_maps_1_2/i.test(x.market);
+              const m = x.market.toLowerCase();
+              const okMkt = m.includes('kills_on_maps_1_2') || m.includes('headshots_on_maps_1_2');
+              return isCS && okMkt && isFinite(x.line);
+            });
+            console.log('CS2 rows to project:', csRows.length);
+
+            // 2) AUTOGEN ALIASES FILE — from CSV players
+            const uniquePlayers = [...new Set(csRows.map(x=>x.player))];
+            const known = { // a few helpful defaults
+              'donk': 22729, 'zywoo': 11893, 'm0nesy': 19230, 'monesy': 19230, 'blamef': 15165,
+              's1mple': 7998, 'niko': 3741, 'ropz': 11816, 'broky': 16555, 'rain': 8183
+            };
+            // If aliases_autogen.js already exists, load it so we don't overwrite user edits
+            let autogen = {};
+            try { autogen = require(process.cwd() + '/aliases_autogen.js'); } catch {}
+
+            // Build a merged alias object: keep existing values, fill known, then create TODOs
+            const aliasObj = { ...autogen };
+            for (const p of uniquePlayers) {
+              const k = norm(p);
+              if (aliasObj[k] == null) {
+                aliasObj[k] = (known[k] != null) ? known[k] : "/* TODO: put HLTV id */";
               }
             }
 
-            // seed a few popular aliases
-            const seeded = { 'donk': 22729, 'zywoo': 11893, 'm0nesy': 19230, 'monesy': 19230, 'blamef': 15165, 's1mple': 7998, 'niko': 3741 };
-            for (const [k,v] of Object.entries(seeded)) if (!manualMap.has(k)) manualMap.set(k, v);
+            // Write aliases_autogen.js so you can paste IDs directly in code
+            const aliasLines = Object.entries(aliasObj)
+              .sort((a,b)=>a[0].localeCompare(b[0]))
+              .map(([k,v])=>`  "${k}": ${typeof v === 'number' ? v : String(v)},`)
+              .join('\n');
+            const aliasFile = `// Auto-generated from your CSV 'player' names.\n// Fill in missing HLTV ids (replace the TODO) and commit this file.\nmodule.exports = {\n${aliasLines}\n};\n`;
+            fs.writeFileSync('aliases_autogen.js', aliasFile);
+            console.log('Wrote aliases_autogen.js with', Object.keys(aliasObj).length, 'entries.');
 
-            // Pull HLTV player directory
+            // 3) Build alias map from code (highest priority), optional player_aliases.csv (second), then fallback to fuzzy
+            const manualFromCode = aliasObj; // highest priority
+            const manualFromCsv = new Map(); // optional player_aliases.csv (ud_name,hltv_id)
+            if (fs.existsSync('player_aliases.csv')) {
+              for (const r of readCSVauto('player_aliases.csv')) {
+                const nm = norm(r.ud_name); const id = parseInt(r.hltv_id,10);
+                if (nm && Number.isFinite(id)) manualFromCsv.set(nm, id);
+              }
+            }
+
+            // HLTV directory (for stats + fuzzy fallback)
             let playersDir = [];
             try {
               const res = await withRetry(() => fetch('https://hltv-api.vercel.app/api/players', { headers: { 'user-agent': 'hltv-csv-mapper' }}));
               playersDir = await res.json();
             } catch (e) {
-              console.error('Hosted /players fetch failed:', e?.message);
+              console.error('HLTV /players fetch failed:', e?.message);
             }
-
-            // Build candidate pool of nickname + real name
-            const pool = (playersDir || []).flatMap(p => {
+            const pool = (playersDir||[]).flatMap(p=>{
               const id = p.id || p.playerId || p._id;
               const nickname = p.nickname || '';
               const realname = p.name || '';
-              const arr = [];
-              if (id && nickname) arr.push({ id, shown: nickname, key: norm(nickname) });
-              if (id && realname) arr.push({ id, shown: realname, key: norm(realname) });
+              const arr=[];
+              if (id && nickname) arr.push({ id, shown:nickname, key:norm(nickname) });
+              if (id && realname) arr.push({ id, shown:realname, key:norm(realname) });
               return arr;
             });
-
-            // Exact index for super-fast hits
             const exact = new Map();
             for (const c of pool) if (c.key && c.id && !exact.has(c.key)) exact.set(c.key, c);
 
-            // fuzzy helpers
+            // lightweight fuzzy (for suggestions only)
             function lev(a,b){
-              a = String(a); b = String(b);
-              const m=a.length, n=b.length;
-              if(!m) return n; if(!n) return m;
-              const dp = Array.from({length:m+1},(_,i)=>Array(n+1).fill(0));
-              for(let i=0;i<=m;i++) dp[i][0]=i;
-              for(let j=0;j<=n;j++) dp[0][j]=j;
-              for(let i=1;i<=m;i++){
-                for(let j=1;j<=n;j++){
-                  const cost = a[i-1]===b[j-1]?0:1;
-                  dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+cost);
-                }
+              a=String(a); b=String(b);
+              const m=a.length,n=b.length; if(!m) return n; if(!n) return m;
+              const dp=Array.from({length:m+1},(_,i)=>Array(n+1).fill(0));
+              for(let i=0;i<=m;i++) dp[i][0]=i; for(let j=0;j<=n;j++) dp[0][j]=j;
+              for(let i=1;i<=m;i++) for(let j=1;j<=n;j++){
+                const cost=a[i-1]===b[j-1]?0:1;
+                dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+cost);
               }
               return dp[m][n];
             }
-            const sim = (a,b) => { const L=Math.max(String(a).length,String(b).length)||1; return 1 - (lev(a,b)/L); };
-
-            function bestCandidates(udName, k=5){
+            const sim=(a,b)=>{const L=Math.max(String(a).length,String(b).length)||1; return 1-(lev(a,b)/L);};
+            function bestCandidates(udName,k=5){
               const key = norm(udName);
-              const list = [];
               const e = exact.get(key);
-              if (e) return [{ id: e.id, nickname: e.shown, score: 1.0 }];
-              for (const c of pool) {
-                let score = 0;
+              if (e) return [{ id:e.id, nickname:e.shown, score:1.0 }];
+              const res = pool.map(c=>{
+                let score=0;
                 if (c.key.startsWith(key) || key.startsWith(c.key)) score = 0.96;
                 else if (c.key.includes(key) || key.includes(c.key)) score = 0.93;
-                else score = 0.80 * sim(key, c.key);
-                list.push({ id: c.id, nickname: c.shown, score });
-              }
-              list.sort((a,b)=> b.score - a.score);
-              return list.slice(0,k);
+                else score = 0.80 * sim(key,c.key);
+                return { id:c.id, nickname:c.shown, score };
+              });
+              res.sort((a,b)=>b.score-a.score);
+              return res.slice(0,k);
             }
 
-            const uniquePlayers = [...new Set(csRows.map(x => x.player))];
-            const mapped = [], unmapped = [];
+            const mapped=[], unmapped=[];
             for (const udName of uniquePlayers) {
               const key = norm(udName);
-              let hltvId = manualMap.get(key) || null;
+              // Priority 1: aliases_autogen.js (your code)
+              let hltvId = Number.isFinite(+manualFromCode[key]) ? +manualFromCode[key] : null;
+              // Priority 2: player_aliases.csv (optional)
+              if (!hltvId) hltvId = manualFromCsv.get(key) || null;
+
               let nickname = null;
               if (!hltvId) {
+                // no hard alias; we’ll still suggest candidates for you
                 const cands = bestCandidates(udName, 5);
-                if (cands.length && cands[0].score >= 0.93) {
-                  hltvId = cands[0].id; nickname = cands[0].nickname;
-                } else {
-                  unmapped.push({
-                    ud_name: udName,
-                    suggestion_1: cands[0]?.nickname || '', suggestion_1_id: cands[0]?.id || '', suggestion_1_score: cands[0]?.score?.toFixed(3) || '',
-                    suggestion_2: cands[1]?.nickname || '', suggestion_2_id: cands[1]?.id || '', suggestion_2_score: cands[1]?.score?.toFixed(3) || '',
-                    suggestion_3: cands[2]?.nickname || '', suggestion_3_id: cands[2]?.id || '', suggestion_3_score: cands[2]?.score?.toFixed(3) || '',
-                    suggestion_4: cands[3]?.nickname || '', suggestion_4_id: cands[3]?.id || '', suggestion_4_score: cands[3]?.score?.toFixed(3) || '',
-                    suggestion_5: cands[4]?.nickname || '', suggestion_5_id: cands[4]?.id || '', suggestion_5_score: cands[4]?.score?.toFixed(3) || '',
-                  });
-                }
+                unmapped.push({
+                  ud_name: udName,
+                  suggestion_1: cands[0]?.nickname || '', suggestion_1_id: cands[0]?.id || '', suggestion_1_score: cands[0]?.score?.toFixed(3) || '',
+                  suggestion_2: cands[1]?.nickname || '', suggestion_2_id: cands[1]?.id || '', suggestion_2_score: cands[1]?.score?.toFixed(3) || '',
+                  suggestion_3: cands[2]?.nickname || '', suggestion_3_id: cands[2]?.id || '', suggestion_3_score: cands[2]?.score?.toFixed(3) || '',
+                  suggestion_4: cands[3]?.nickname || '', suggestion_4_id: cands[3]?.id || '', suggestion_4_score: cands[3]?.score?.toFixed(3) || '',
+                  suggestion_5: cands[4]?.nickname || '', suggestion_5_id: cands[4]?.id || '', suggestion_5_score: cands[4]?.score?.toFixed(3) || '',
+                });
               }
               mapped.push({ ud_name: udName, hltv_id: hltvId || '', nickname: nickname || udName });
             }
             writeCSV(mapped, 'hl_players_mapped.csv');
             writeCSV(unmapped, 'hl_players_unmapped.csv');
 
-            const withIDs = mapped.filter(x => String(x.hltv_id).trim() !== '');
-            console.log('Mapped to HLTV IDs:', withIDs.length, '/', mapped.length);
-            if (unmapped.length) console.log(`Unmapped players: ${unmapped.length} (see hl_players_unmapped.csv)`);
+            const withIDs = mapped.filter(x=>String(x.hltv_id).trim()!=='');
+            console.log('Mapped to HLTV IDs (hard aliases):', withIDs.length, '/', mapped.length);
+            if (unmapped.length) console.log(`Unmapped players: ${unmapped.length} (fill aliases_autogen.js and rerun)`);
 
-            // 3) HLTV stats
+            // If no IDs yet, stop early but provide the alias file + suggestions to fill in
+            if (!withIDs.length) {
+              writeCSV([], 'hltv_player_form.csv');
+              writeCSV([], 'hltv_projections.csv');
+              writeCSV([], 'ud_vs_model_edges.csv');
+              return;
+            }
+
+            // 4) Pull HLTV stats
             const today = new Date();
-            const startDate = new Date(today.getTime() - LOOKBACK_DAYS*24*3600*1000).toISOString().slice(0,10);
-            const endDate   = today.toISOString().slice(0,10);
-
-            const stats = [];
+            const startDate = new Date(today.getTime()-parseInt(process.env.LOOKBACK_DAYS||'60',10)*24*3600*1000).toISOString().slice(0,10);
+            const endDate = today.toISOString().slice(0,10);
+            const stats=[];
             for (const m of withIDs) {
-              try {
-                const id = parseInt(m.hltv_id, 10);
+              try{
+                const id = parseInt(m.hltv_id,10);
                 if (!Number.isFinite(id)) continue;
-                const s = await withRetry(() => HLTV.getPlayerStats({ id, startDate, endDate }), {tries: 3, delay: 500});
+                const s = await withRetry(()=>HLTV.getPlayerStats({ id, startDate, endDate }), {tries:3, delay:500});
                 stats.push({
-                  playerId: id,
-                  nickname: s?.player?.nickname || m.nickname || m.ud_name,
-                  team:     s?.team?.name || '',
-                  maps:     s?.overview?.mapsPlayed,
-                  kpr:      s?.overview?.kpr,
-                  hsPct:    s?.overview?.hsPercentage,
-                  adr:      s?.overview?.adr,
-                  rating:   s?.overview?.rating1
+                  playerId:id,
+                  nickname:s?.player?.nickname || m.nickname || m.ud_name,
+                  team:s?.team?.name || '',
+                  maps:s?.overview?.mapsPlayed,
+                  kpr:s?.overview?.kpr,
+                  hsPct:s?.overview?.hsPercentage,
+                  adr:s?.overview?.adr,
+                  rating:s?.overview?.rating1
                 });
-              } catch (e) {
-                console.error('getPlayerStats fail', m.hltv_id, m.ud_name, e?.message);
-              }
-              await sleep(Number.isFinite(THROTTLE_MS) ? THROTTLE_MS : 350);
+              }catch(e){ console.error('getPlayerStats fail', m.hltv_id, m.ud_name, e?.message); }
+              await sleep(isFinite(parseInt(process.env.THROTTLE_MS))?parseInt(process.env.THROTTLE_MS):350);
             }
             writeCSV(stats, 'hltv_player_form.csv');
 
-            // 4) Projections
-            const pf = new Map(stats.map(r => [norm(r.nickname), r]));
-            const proj = [];
+            // 5) Projections
+            const pf = new Map(stats.map(r=>[norm(r.nickname), r]));
+            const proj=[];
             for (const r of stats) {
-              const maps = +r.maps || 0;
-              const kpr  = +r.kpr  || leagueKPR;
-              const hs   = +r.hsPct || leagueHS;
-              const kprAdj = shrink(kpr, maps, leagueKPR, maps < 25 ? 40 : 25);
-              const hsAdj  = shrink(hs,  maps, leagueHS,  maps < 25 ? 60 : 40);
-              const muKills = EXPECTED_ROUNDS * kprAdj;
-              proj.push({ player: r.nickname, team: r.team, maps, kprAdj:+kprAdj.toFixed(3), hsAdj:+hsAdj.toFixed(3), projKills:+muKills.toFixed(1), projHS:+(muKills*hsAdj).toFixed(1) });
+              const maps=+r.maps||0, kpr=+r.kpr||leagueKPR, hs=+r.hsPct||leagueHS;
+              const kprAdj=shrink(kpr,maps,leagueKPR,maps<25?40:25);
+              const hsAdj=shrink(hs,maps,leagueHS,maps<25?60:40);
+              const muKills=50*kprAdj;
+              proj.push({ player:r.nickname, team:r.team, maps, kprAdj:+kprAdj.toFixed(3), hsAdj:+hsAdj.toFixed(3), projKills:+muKills.toFixed(1), projHS:+(muKills*hsAdj).toFixed(1) });
             }
             writeCSV(proj, 'hltv_projections.csv');
 
-            // 5) Edges
-            function tailProbOver(line, mu, variance) {
-              const sigma = Math.sqrt(Math.max(variance, 1e-6));
-              const z = (line - mu)/sigma;
-              const pOver = 1 - 0.5*(1+erf(z/Math.SQRT2));
-              return { pOver, pUnder: 1 - pOver, sigma };
+            // 6) Edges
+            function tailProbOver(line,mu,var_) {
+              const sigma=Math.sqrt(Math.max(var_,1e-6));
+              const z=(line-mu)/sigma;
+              const pOver=1-0.5*(1+erf(z/Math.SQRT2));
+              return { pOver, pUnder:1-pOver, sigma };
             }
 
-            const edges = [];
+            const edges=[];
             for (const u of csRows) {
-              const form = pf.get(norm(u.player));
-              if (!form || !isFinite(u.line)) continue;
+              const f = pf.get(norm(u.player));
+              if (!f || !isFinite(u.line)) continue;
 
-              const maps = +form.maps || 0;
-              const kpr  = +form.kpr  || leagueKPR;
-              const hs   = +form.hsPct || leagueHS;
-              const kprAdj = shrink(kpr, maps, leagueKPR, maps < 25 ? 40 : 25);
-              const hsAdj  = shrink(hs,  maps, leagueHS,  maps < 25 ? 60 : 40);
-              const muKills = EXPECTED_ROUNDS * kprAdj;
+              const maps=+f.maps||0, kpr=+f.kpr||leagueKPR, hs=+f.hsPct||leagueHS;
+              const kprAdj=shrink(kpr,maps,leagueKPR,maps<25?40:25);
+              const hsAdj=shrink(hs,maps,leagueHS,maps<25?60:40);
+              const muKills=50*kprAdj;
 
               let mu, variance;
-              const mkt = u.market.toLowerCase();
+              const mkt=u.market.toLowerCase();
               if (mkt.includes('kills_on_maps_1_2')) {
-                mu = muKills;
-                variance = EXPECTED_ROUNDS * kprAdj * (1 - kprAdj) + 3.0;
+                mu=muKills; variance=50*kprAdj*(1-kprAdj)+3.0;
               } else if (mkt.includes('headshots_on_maps_1_2')) {
-                mu = muKills * hsAdj;
-                variance = muKills * hsAdj * (1 - hsAdj) + 2.0;
+                mu=muKills*hsAdj; variance=muKills*hsAdj*(1-hsAdj)+2.0;
               } else continue;
 
               const { pOver, pUnder, sigma } = tailProbOver(u.line, mu, variance);
-              const modelProb = u.side === 'over' ? pOver : pUnder;
+              const modelProb = u.side==='over'?pOver:pUnder;
               const implied = impliedProb(u.dec_odds);
               const edge = modelProb - implied;
 
               edges.push({
-                player: u.player, team: form.team || '', market: u.market, side: u.side,
-                ud_line: +u.line.toFixed(1), ud_dec: +u.dec_odds,
-                our_mu: +mu.toFixed(2), our_sigma: +sigma.toFixed(2),
-                prob_over: +pOver.toFixed(3), prob_under: +pUnder.toFixed(3),
-                model_prob: +modelProb.toFixed(3), edge: +edge.toFixed(3),
-                sample_maps: form.maps
+                player:u.player, team:f.team||'', market:u.market, side:u.side,
+                ud_line:+u.line.toFixed(1), ud_dec:+u.dec_odds,
+                our_mu:+mu.toFixed(2), our_sigma:+sigma.toFixed(2),
+                prob_over:+pOver.toFixed(3), prob_under:+pUnder.toFixed(3),
+                model_prob:+modelProb.toFixed(3), edge:+edge.toFixed(3),
+                sample_maps:f.maps
               });
             }
+            edges.sort((a,b)=>b.edge-a.edge);
+            writeCSV(edges,'ud_vs_model_edges.csv');
 
-            edges.sort((a,b)=> b.edge - a.edge);
-            writeCSV(edges, 'ud_vs_model_edges.csv');
-
-            console.log(`Done. CS rows: ${csRows.length}, mapped IDs: ${withIDs.length}, HLTV stats: ${stats.length}, edges: ${edges.length}`);
-          })().catch(err => {
+            console.log(`Done. CS rows: ${csRows.length}, hard-mapped IDs: ${withIDs.length}, HLTV stats: ${stats.length}, edges: ${edges.length}`);
+          })().catch(err=>{
             console.error('Top-level error:', err?.message);
-            try { fs.writeFileSync('hl_players_mapped.csv', ''); } catch {}
-            try { fs.writeFileSync('hl_players_unmapped.csv', ''); } catch {}
-            try { fs.writeFileSync('hltv_player_form.csv', ''); } catch {}
-            try { fs.writeFileSync('hltv_projections.csv', ''); } catch {}
-            try { fs.writeFileSync('ud_vs_model_edges.csv', ''); } catch {}
+            try { fs.writeFileSync('hl_players_mapped.csv',''); } catch {}
+            try { fs.writeFileSync('hl_players_unmapped.csv',''); } catch {}
+            try { fs.writeFileSync('hltv_player_form.csv',''); } catch {}
+            try { fs.writeFileSync('hltv_projections.csv',''); } catch {}
+            try { fs.writeFileSync('ud_vs_model_edges.csv',''); } catch {}
+            try { fs.writeFileSync('aliases_autogen.js','module.exports = {}\\n'); } catch {}
             process.exitCode = 0;
           });
           JS
@@ -382,6 +369,7 @@ jobs:
           name: hltv_from_ud_edges
           path: |
             ${{ inputs.ud_csv_path }}
+            aliases_autogen.js
             hl_players_mapped.csv
             hl_players_unmapped.csv
             hltv_player_form.csv
