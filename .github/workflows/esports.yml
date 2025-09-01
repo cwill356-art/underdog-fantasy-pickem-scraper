@@ -10,15 +10,68 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: Install deps
         run: pip install pandas requests
-      - name: Run esports-only scraper
+
+      - name: Run base scraper
         run: |
           python - << 'PY'
           from underdog_scraper import UnderdogScraper
-          UnderdogScraper().scrape()
+          UnderdogScraper().scrape()  # produces underdog_props.csv
           PY
-          python esports_only.py
+
+      - name: Filter to esports and write CSV
+        run: |
+          python - << 'PY'
+          import json, re, pandas as pd
+          df = pd.read_csv("underdog_props.csv")
+          ESPORT_KEYWORDS = ["cs2","cs:go","csgo","counter-strike","valorant","league of legends","lol","dota","rocket league"]
+          STAT_HINTS = ["kills","deaths","assists","headshots","maps","rounds","kpr","adr","first blood"]
+
+          def first_col_like(cols, candidates):
+              for want in candidates:
+                  for c in cols:
+                      if c.lower() == want or want in c.lower():
+                          return c
+              return None
+
+          cols = list(df.columns)
+          full_name = first_col_like(cols, ["full_name","player","name"])
+          stat_name = first_col_like(cols, ["stat_name","market","category"])
+          sel_hdr   = first_col_like(cols, ["selection_header","matchup","game"])
+          sel_sub   = first_col_like(cols, ["selection_subheader","league"])
+          sport_col = first_col_like(cols, ["sport_name","sport"])
+          sport_id  = first_col_like(cols, ["sport_id"])
+
+          if sport_col:
+              mask = df[sport_col].astype(str).str.lower().str.contains("|".join(map(re.escape, ESPORT_KEYWORDS)))
+              out = df[mask].copy()
+          else:
+              hay = []
+              for c in [sel_hdr, sel_sub, stat_name]:
+                  if c:
+                      hay.append(df[c].astype(str).str.lower())
+              if hay:
+                  combo = hay[0]
+                  for s in hay[1:]:
+                      combo = combo.fillna("") + " " + s.fillna("")
+                  key_mask = combo.str.contains("|".join(map(re.escape, ESPORT_KEYWORDS)), na=False)
+                  stat_mask = df[stat_name].astype(str).str.lower().str.contains("|".join(map(re.escape, STAT_HINTS)), na=False) if stat_name else False
+                  out = df[key_mask | stat_mask].copy()
+              else:
+                  out = df.iloc[0:0].copy()
+
+          keep = [c for c in [full_name, stat_name, "stat_value", "choice", "american_price",
+                              "decimal_price", "payout_multiplier", sel_hdr, sel_sub,
+                              sport_col, sport_id, "updated_at"] if c in df.columns]
+          es = out[keep].copy() if len(out) else out.copy()
+          es.to_csv("underdog_props_esports.csv", index=False)
+
+          # small JSON preview in logs
+          print(json.dumps(es.head(50).to_dict(orient="records"), ensure_ascii=False, indent=2))
+          PY
+
       - name: Upload esports-only CSV
         uses: actions/upload-artifact@v4
         with:
