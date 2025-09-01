@@ -37,7 +37,7 @@ jobs:
       - name: Install deps
         run: npm i hltv papaparse
 
-      - name: Build CS2 projections from your UD file and join edges
+      - name: Build CS2 projections from your UD file and join edges (with fuzzy mapper)
         env:
           UD_CSV_PATH: ${{ inputs.ud_csv_path }}
           LOOKBACK_DAYS: ${{ inputs.lookback_days }}
@@ -55,11 +55,35 @@ jobs:
             .toLowerCase()
             .normalize('NFKD').replace(/[\u0300-\u036f]/g,'') // strip accents
             .replace(/\s+/g,'')
-            .replace(/[^a-z0-9_]/g,'');
+            .replace(/[^a-z0-9_]/g,''); // keep a-z0-9 and underscore
+
+          // Basic Levenshtein distance (no extra deps)
+          function lev(a,b){
+            a = String(a); b = String(b);
+            const m=a.length, n=b.length;
+            if(!m) return n; if(!n) return m;
+            const dp = Array.from({length:m+1},(_,i)=>Array(n+1).fill(0));
+            for(let i=0;i<=m;i++) dp[i][0]=i;
+            for(let j=0;j<=n;j++) dp[0][j]=j;
+            for(let i=1;i<=m;i++){
+              for(let j=1;j<=n;j++){
+                const cost = a[i-1]===b[j-1]?0:1;
+                dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+cost);
+              }
+            }
+            return dp[m][n];
+          }
+          // Similarity score in [0,1] (1 = exact)
+          function sim(a,b){
+            if(!a && !b) return 1;
+            const L = Math.max(String(a).length, String(b).length) || 1;
+            return 1 - (lev(a,b)/L);
+          }
+
           const impliedProb = (dec) => (isFinite(dec) && dec>0 ? 1/dec : 0.526);
           const shrink = (rate, n, base, k) => ((n*rate + k*base) / ((n+k)||1));
 
-          // erf polyfill
+          // erf polyfill (CDF)
           function erf(x){
             const sign = x < 0 ? -1 : 1;
             x = Math.abs(x);
@@ -114,6 +138,7 @@ jobs:
               writeCSV([], 'hltv_player_form.csv');
               writeCSV([], 'hltv_projections.csv');
               writeCSV([], 'ud_vs_model_edges.csv');
+              writeCSV([], 'hl_players_unmapped.csv');
               return;
             }
 
@@ -130,7 +155,7 @@ jobs:
               return '';
             };
 
-            // Parse schema: player, market, side, decimal_price; numeric line from selection_subheader
+            // Parse schema: player, sport_name, market, side, decimal_price; numeric line from selection_subheader
             const udParsed = udRaw.map(r => {
               const player = String(pickCol(r, ['player','full_name','name','selection_header'])).trim();
               const sport  = String(pickCol(r, ['sport_name','sport'])).trim();
@@ -147,7 +172,7 @@ jobs:
               return { player, sport, market, side, line, dec_odds: isFinite(dec)?dec:1.90 };
             }).filter(x => x.player && x.market);
 
-            // Keep Counter-Strike only and only markets we model
+            // Keep Counter-Strike only and markets we model
             const csRows = udParsed.filter(x => {
               const isCS = String(x.sport||'').toUpperCase() === 'CS';
               const m = x.market.toLowerCase();
@@ -161,11 +186,13 @@ jobs:
               writeCSV([], 'hltv_player_form.csv');
               writeCSV([], 'hltv_projections.csv');
               writeCSV([], 'ud_vs_model_edges.csv');
+              writeCSV([], 'hl_players_unmapped.csv');
               return;
             }
             console.log('CS2 rows to project:', csRows.length);
+            console.log('Sample parsed rows:', csRows.slice(0,5));
 
-            // ============== 2) Map UD names -> HLTV IDs ==============
+            // ============== 2) Map UD names -> HLTV IDs (fuzzy) ==============
             // Optional manual overrides: player_aliases.csv (ud_name,hltv_id)
             const manualMap = new Map();
             if (fs.existsSync('player_aliases.csv')) {
@@ -176,6 +203,15 @@ jobs:
               }
             }
 
+            // Seed popular aliases (helps out-of-the-box)
+            const seeded = {
+              'donk': 22729, 'zywoo': 11893, 'monesy': 19230, 'm0nesy': 19230,
+              's1mple': 7998, 'b1t': 18987, 'niko': 3741, 'device': 7592, 'blamef': 15165,
+              'ropz': 11816, 'rain': 8183, 'broky': 16555, 'karrigan': 429,
+              'jabbi': 20347, 'stavn': 16787, 'xertion': 20424, 'frozen': 7187
+            };
+            for (const [k,v] of Object.entries(seeded)) if (!manualMap.has(k)) manualMap.set(k, v);
+
             // Hosted directory for broad coverage
             let playersDir = [];
             try {
@@ -184,28 +220,82 @@ jobs:
             } catch (e) {
               console.error('Hosted /players fetch failed:', e?.message);
             }
-            const byNick = new Map();
-            for (const p of (playersDir||[])) {
-              const key = norm(p.nickname || p.name || '');
-              if (key) byNick.set(key, p);
+            // Build candidate index
+            const pool = (playersDir || []).map(p => {
+              const nickname = p.nickname || p.name || '';
+              return {
+                id: p.id || p.playerId || p._id,
+                nickname,
+                key: norm(nickname)
+              };
+            }).filter(x => x.id && x.key);
+
+            function bestCandidates(udName, k=5){
+              const key = norm(udName);
+              const results = [];
+              for (const c of pool) {
+                // scores: exact > startsWith/includes > similarity
+                let score = 0;
+                if (c.key === key) score = 1.0;
+                else if (c.key.startsWith(key) || key.startsWith(c.key)) score = 0.95;
+                else if (c.key.includes(key) || key.includes(c.key)) score = 0.92;
+                else score = 0.80 * sim(key, c.key);
+                results.push({ id: c.id, nickname: c.nickname, score });
+              }
+              results.sort((a,b)=> b.score - a.score);
+              return results.slice(0,k);
             }
 
             const uniquePlayers = [...new Set(csRows.map(x => x.player))];
+
             const mapped = [];
+            const unmapped = [];
             for (const udName of uniquePlayers) {
               const key = norm(udName);
+
+              // 1) manual/seed alias hit
               let hltvId = manualMap.get(key) || null;
-              let nick = null;
+              let nickname = null;
+
+              // 2) exact/fuzzy search if needed
               if (!hltvId) {
-                const rec = byNick.get(key);
-                if (rec) { hltvId = rec.id || rec.playerId || rec._id; nick = rec.nickname || rec.name || udName; }
+                const cands = bestCandidates(udName, 5);
+                if (cands.length && cands[0].score >= 0.92) {
+                  hltvId = cands[0].id;
+                  nickname = cands[0].nickname;
+                } else {
+                  // keep as unresolved with suggestions
+                  unmapped.push({
+                    ud_name: udName,
+                    suggestion_1: cands[0]?.nickname || '',
+                    suggestion_1_id: cands[0]?.id || '',
+                    suggestion_1_score: cands[0]?.score?.toFixed(3) || '',
+                    suggestion_2: cands[1]?.nickname || '',
+                    suggestion_2_id: cands[1]?.id || '',
+                    suggestion_2_score: cands[1]?.score?.toFixed(3) || '',
+                    suggestion_3: cands[2]?.nickname || '',
+                    suggestion_3_id: cands[2]?.id || '',
+                    suggestion_3_score: cands[2]?.score?.toFixed(3) || '',
+                    suggestion_4: cands[3]?.nickname || '',
+                    suggestion_4_id: cands[3]?.id || '',
+                    suggestion_4_score: cands[3]?.score?.toFixed(3) || '',
+                    suggestion_5: cands[4]?.nickname || '',
+                    suggestion_5_id: cands[4]?.id || '',
+                    suggestion_5_score: cands[4]?.score?.toFixed(3) || '',
+                  });
+                }
               }
-              mapped.push({ ud_name: udName, hltv_id: hltvId || '', nickname: nick || udName });
+
+              mapped.push({ ud_name: udName, hltv_id: hltvId || '', nickname: nickname || udName });
             }
             writeCSV(mapped, 'hl_players_mapped.csv');
+            writeCSV(unmapped, 'hl_players_unmapped.csv');
 
             const withIDs = mapped.filter(x => String(x.hltv_id).trim() !== '');
             console.log('Mapped to HLTV IDs:', withIDs.length, '/', mapped.length);
+            if (unmapped.length) {
+              console.log(`Unmapped players: ${unmapped.length} (see hl_players_unmapped.csv for suggestions)`);
+            }
 
             // ============== 3) Pull HLTV player stats (with retries) ==============
             const stats = [];
@@ -313,6 +403,7 @@ jobs:
             try { fs.writeFileSync('hltv_player_form.csv', ''); } catch {}
             try { fs.writeFileSync('hltv_projections.csv', ''); } catch {}
             try { fs.writeFileSync('ud_vs_model_edges.csv', ''); } catch {}
+            try { fs.writeFileSync('hl_players_unmapped.csv', ''); } catch {}
             process.exitCode = 0;
           });
           JS
@@ -325,6 +416,7 @@ jobs:
             ${{ inputs.ud_csv_path }}
             player_aliases.csv
             hl_players_mapped.csv
+            hl_players_unmapped.csv
             hltv_player_form.csv
             hltv_projections.csv
             ud_vs_model_edges.csv
