@@ -1,216 +1,37 @@
-# Esports-only filter (LoL + CS2/CS:GO [+ Valorant when available])
-# - Runs the base Underdog scraper (unchanged) to create underdog_props.csv
-# - Filters to esports using sport_id/sport_name when present, with smart fallbacks
-# - Expands LoL beyond kills: assists, deaths, CS (creep score), etc.
-# - Cleans player names from selection_header when full_name is missing
-# - Writes underdog_props_esports.csv and prints a small JSON preview to logs
+name: Esports-only props
+on:
+  workflow_dispatch: {}
+  push:
+    paths:
+      - 'Esports'
+      - 'esports_only.py'
+      - '.github/workflows/esports.yml'
 
-import re
-import json
-import pandas as pd
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-# --- 1) Run the underlying scraper (do not modify the original file) ---
-from underdog_scraper import UnderdogScraper
-UnderdogScraper().scrape()  # produces "underdog_props.csv"
+      - name: Install deps
+        run: pip install pandas requests
 
-SRC = "underdog_props.csv"
-df = pd.read_csv(SRC)
+      - name: Run base scraper
+        run: |
+          python - << 'PY'
+          from underdog_scraper import UnderdogScraper
+          UnderdogScraper().scrape()  # writes underdog_props.csv
+          PY
 
-# --- 2) Detection config ---
+      # If your esports file is named "Esports", change the next line to: python Esports
+      - name: Filter to esports
+        run: python esports_only.py
 
-# Underdog sometimes exposes sport_id/sport_name; include common aliases
-ESPORT_SPORT_IDS    = {"LOL", "LEAGUEOFLEGENDS", "LEAGUE_OF_LEGENDS", "CS", "CSGO", "CS2", "COUNTER_STRIKE", "VAL", "VALORANT"}
-ESPORT_SPORT_NAMES  = {"lol", "league of legends", "league-of-legends",
-                       "cs", "csgo", "cs:go", "cs2", "counter-strike", "counter strike",
-                       "valorant"}
-
-# Markets we care about per title (these are *substrings* matched on a lowercased stat/market name)
-LOL_MARKETS = {
-    "kills", "assists", "deaths", "cs", "creep_score", "creep score", "cs_on_maps", "kills_on_maps",
-    "kills_on_maps_1_2", "kills_on_maps_1_2_3", "assists_on_maps", "deaths_on_maps"
-}
-CS_MARKETS  = {
-    "kills", "headshots", "hs", "adr", "kpr", "deaths", "assists", "maps", "rounds",
-    "kills_map", "kills_on_maps", "kills_on_maps_1_2", "kills_on_maps_1_2_3",
-}
-VAL_MARKETS = {
-    "kills", "assists", "deaths", "acs", "first blood", "first_blood", "hs", "headshots"
-}
-
-# Fallback keywords to detect esports if sport columns are missing/empty
-ESPORT_KEYWORDS = sorted({*ESPORT_SPORT_NAMES, "dota", "rocket league"})
-STAT_HINTS = sorted({*LOL_MARKETS, *CS_MARKETS, *VAL_MARKETS})
-
-# --- 3) Column helpers ---
-
-def first_col_like(columns, candidates):
-    cols = list(columns)
-    for want in candidates:
-        for c in cols:
-            cl = c.lower()
-            if cl == want or want in cl:
-                return c
-    return None
-
-full_name_col   = first_col_like(df.columns, ["full_name", "player", "name"])
-stat_name_col   = first_col_like(df.columns, ["stat_name", "market", "category", "stat"])
-line_col        = first_col_like(df.columns, ["stat_value", "line", "value"])
-choice_col      = first_col_like(df.columns, ["choice"])
-am_price_col    = first_col_like(df.columns, ["american_price", "americanodds", "american_odds"])
-dec_price_col   = first_col_like(df.columns, ["decimal_price", "decimalodds", "decimal_odds"])
-payout_col      = first_col_like(df.columns, ["payout_multiplier", "payout"])
-sel_header_col  = first_col_like(df.columns, ["selection_header", "matchup", "player_header"])
-sel_sub_col     = first_col_like(df.columns, ["selection_subheader", "league", "game"])
-sport_id_col    = first_col_like(df.columns, ["sport_id"])
-sport_name_col  = first_col_like(df.columns, ["sport_name", "sport"])
-updated_at_col  = first_col_like(df.columns, ["updated_at", "last_updated", "modified_at"])
-
-# --- 4) Normalize helper fields ---
-
-def normalize_player(row):
-    """Prefer full_name; if missing/NaN, fallback to selection_header (strip extras)."""
-    name = None
-    if full_name_col and pd.notna(row.get(full_name_col, None)):
-        name = str(row[full_name_col]).strip()
-        if name:
-            return name
-    if sel_header_col and pd.notna(row.get(sel_header_col, None)):
-        # selection_header often is just the player (e.g., "Kofte"). If it contains dashes/VS, keep first token.
-        raw = str(row[sel_header_col]).strip()
-        raw = re.split(r"\s+-\s+| vs\.? | @ ", raw, maxsplit=1, flags=re.IGNORECASE)[0]
-        return raw.strip()
-    return None
-
-def normalize_market_title(stat_value: str):
-    s = (stat_value or "").lower()
-    return re.sub(r"\s+", "_", s)
-
-def is_esport_by_sport(row):
-    # Use explicit sport columns if available
-    if sport_id_col and pd.notna(row.get(sport_id_col, None)):
-        if str(row[sport_id_col]).strip().upper() in ESPORT_SPORT_IDS:
-            return True
-    if sport_name_col and pd.notna(row.get(sport_name_col, None)):
-        s = str(row[sport_name_col]).strip().lower()
-        for key in ESPORT_SPORT_NAMES:
-            if key in s:
-                return True
-    return False
-
-def is_esport_by_keywords(row):
-    hay = []
-    for c in (sel_header_col, sel_sub_col, stat_name_col):
-        if c and pd.notna(row.get(c, None)):
-            hay.append(str(row[c]).lower())
-    big = " ".join(hay)
-    return any(k in big for k in ESPORT_KEYWORDS) or any(k in big for k in STAT_HINTS)
-
-def title_from_row(row):
-    """Infer title for market bucketing (LOL/CS/VAL) to broaden market allowlist."""
-    # Prefer sport_name if present
-    if sport_name_col and pd.notna(row.get(sport_name_col, None)):
-        s = str(row[sport_name_col]).lower()
-        if "league" in s or "lol" in s:
-            return "LOL"
-        if "valorant" in s or "val" in s:
-            return "VAL"
-        if "cs" in s or "counter" in s:
-            return "CS"
-    # Fallback to keywords
-    hay = f"{str(row.get(sel_header_col, '')).lower()} {str(row.get(sel_sub_col, '')).lower()} {str(row.get(stat_name_col, '')).lower()}"
-    if any(k in hay for k in ["league of legends", "lol"]):
-        return "LOL"
-    if any(k in hay for k in ["valorant", "val"]):
-        return "VAL"
-    if any(k in hay for k in ["cs2", "cs:go", "csgo", "counter-strike", "counter strike", "cs "]):
-        return "CS"
-    return None
-
-def market_allowed(row):
-    """Keep more LoL markets (assists, deaths, CS) and common CS markets."""
-    stat = normalize_market_title(row.get(stat_name_col, ""))
-    title = title_from_row(row)
-    if not stat:
-        return False
-    if title == "LOL":
-        return any(key in stat for key in LOL_MARKETS)
-    if title == "CS":
-        return any(key in stat for key in CS_MARKETS)
-    if title == "VAL":
-        return any(key in stat for key in VAL_MARKETS)
-    # Unknown title but looks like esports market
-    return any(key in stat for key in STAT_HINTS)
-
-# --- 5) Build esports mask + filter ---
-
-if len(df) == 0:
-    es = df.iloc[0:0].copy()
-else:
-    # First, coarse esport detection
-    mask_es = df.apply(lambda r: is_esport_by_sport(r) or is_esport_by_keywords(r), axis=1)
-    es_all = df[mask_es].copy()
-
-    # Then, keep only markets we care about (expands LoL beyond kills; adds CS/VAL)
-    if stat_name_col:
-        es = es_all[es_all.apply(market_allowed, axis=1)].copy()
-    else:
-        es = es_all.copy()
-
-# --- 6) Final shaping ---
-
-def safe_get(row, col):
-    return row.get(col) if col in row.index else None
-
-records = []
-for _, row in es.iterrows():
-    player = normalize_player(row)
-    market = safe_get(row, stat_name_col) if stat_name_col else None
-    line   = safe_get(row, line_col) if line_col else None
-    side   = safe_get(row, choice_col) if choice_col else None
-    amodds = safe_get(row, am_price_col) if am_price_col else None
-    dodds  = safe_get(row, dec_price_col) if dec_price_col else None
-    payout = safe_get(row, payout_col) if payout_col else None
-    head   = safe_get(row, sel_header_col) if sel_header_col else None
-    sub    = safe_get(row, sel_sub_col) if sel_sub_col else None
-    sname  = safe_get(row, sport_name_col) if sport_name_col else None
-    sid    = safe_get(row, sport_id_col) if sport_id_col else None
-    uat    = safe_get(row, updated_at_col) if updated_at_col else None
-
-    records.append({
-        "player": player,
-        "sport_name": sname,
-        "sport_id": sid,
-        "market": market,
-        "line": line,
-        "side": side,
-        "american_price": amodds,
-        "decimal_price": dodds,
-        "payout_multiplier": payout,
-        "selection_header": head,
-        "selection_subheader": sub,
-        "updated_at": uat,
-    })
-
-out = pd.DataFrame.from_records(records)
-
-# Drop obvious empties (e.g., completely blank rows)
-if "player" in out.columns:
-    out = out[~out["player"].isna() | out["selection_header"].notna()].copy()
-
-# --- 7) Save + preview ---
-OUT = "underdog_props_esports.csv"
-out.to_csv(OUT, index=False)
-
-# Print a small JSON preview (shows up in GitHub Actions logs; handy on mobile)
-print(json.dumps(out.head(200).to_dict(orient="records"), ensure_ascii=False, indent=2))
-
-# Also print counts for quick sanity check in logs
-def count_by(col):
-    if col in out.columns:
-        return out[col].fillna("NA").value_counts().to_dict()
-    return {}
-print("SUMMARY_COUNTS=", json.dumps({
-    "by_sport_id": count_by("sport_id"),
-    "by_sport_name": count_by("sport_name"),
-    "by_market_sample": count_by("market")
-}, indent=2, ensure_ascii=False))
+      - name: Upload esports-only CSV
+        uses: actions/upload-artifact@v4
+        with:
+          name: underdog_props_esports
+          path: underdog_props_esports.csv
