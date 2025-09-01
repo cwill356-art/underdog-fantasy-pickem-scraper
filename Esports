@@ -1,0 +1,78 @@
+# esports_only.py
+# Runs the existing Underdog scraper, then filters to esports only and writes underdog_props_esports.csv
+
+import json, sys, re
+import pandas as pd
+
+# ---- Configurable keywords (fallbacks if sport lookup isn't available) ----
+ESPORT_KEYWORDS = [
+    "cs2", "cs:go", "csgo", "counter-strike", "valorant",
+    "league of legends", "lol", "dota", "rocket league"
+]
+STAT_HINTS = [
+    "kills", "deaths", "assists", "headshots", "maps", "rounds",
+    "cs", "first blood", "acs", "kpr", "adr"
+]
+
+# ---- Run the underlying scraper class without editing it ----
+from underdog_scraper import UnderdogScraper
+
+scraper = UnderdogScraper()
+scraper.scrape()  # should produce underdog_props.csv
+
+src = "underdog_props.csv"
+df = pd.read_csv(src)
+
+# Try to find helpful columns consistently across repo versions
+def col_like(df, candidates):
+    cols = [c for c in df.columns]
+    for want in candidates:
+        for c in cols:
+            if c.lower() == want or want in c.lower():
+                yield c
+
+def first(df, candidates):
+    return next(col_like(df, candidates), None)
+
+# Known columns we’ve seen in your file
+full_name_col = first(df, ["full_name","player","name"])
+stat_name_col = first(df, ["stat_name","market","category"])
+sel_head_col  = first(df, ["selection_header","matchup","game"])
+sel_sub_col   = first(df, ["selection_subheader","league"])
+sport_id_col  = first(df, ["sport_id"])
+sport_name_col= first(df, ["sport_name","sport"])
+
+# 1) Preferred: if sport name is present, use explicit filter
+if sport_name_col:
+    mask = df[sport_name_col].astype(str).str.lower().str.contains("|".join([re.escape(k) for k in ESPORT_KEYWORDS]))
+    out = df[mask].copy()
+else:
+    # 2) Fallback: keyword search across headers + stat types
+    hay = []
+    for col in [sel_head_col, sel_sub_col, stat_name_col]:
+        if col:
+            hay.append(df[col].astype(str).str.lower())
+    if hay:
+        combo = hay[0]
+        for series in hay[1:]:
+            combo = combo.fillna("") + " " + series.fillna("")
+        # Any esports keyword OR any stat hint that screams esports
+        key_mask = combo.str.contains("|".join([re.escape(k) for k in ESPORT_KEYWORDS]), na=False)
+        stat_mask = df[stat_name_col].astype(str).str.lower().str.contains("|".join([re.escape(k) for k in STAT_HINTS]), na=False) if stat_name_col else False
+        out = df[key_mask | stat_mask].copy()
+    else:
+        out = df.iloc[0:0].copy()  # nothing found
+
+# Save trimmed CSV + readable JSON for quick phone copy/paste
+keep = [c for c in [
+    full_name_col, stat_name_col, "stat_value", "choice", "american_price",
+    "decimal_price", "payout_multiplier", sel_head_col, sel_sub_col,
+    sport_name_col, sport_id_col, "updated_at"
+] if c in df.columns]
+
+es_df = out[keep].copy() if len(out) else out.copy()
+es_df.to_csv("underdog_props_esports.csv", index=False)
+
+# Also print a compact JSON preview (first 200 rows) for phone workflows
+preview = es_df.head(200).to_dict(orient="records")
+print(json.dumps(preview, ensure_ascii=False, indent=2))
