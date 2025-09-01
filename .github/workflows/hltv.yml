@@ -1,4 +1,5 @@
 name: HLTV projections (explicit player list + fuzzy + live HLTV search)
+
 on:
   workflow_dispatch:
     inputs:
@@ -44,423 +45,151 @@ jobs:
           const Papa = require('papaparse');
 
           const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
-          const UA = 'Mozilla/5.0 (compatible; HLTV-CSV-Matcher/1.0; +github-actions)';
           const norm = s => String(s||'')
             .toLowerCase()
             .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
             .replace(/\s+/g,'')
             .replace(/[^a-z0-9_]/g,'');
 
-          // ---------- YOUR PLAYER MAP (from your message) ----------
+          // -------------------- FIXED ALIASES --------------------
           const ALIASES = {
-  "adron": null, // TODO: HLTV id for ADRON
-  "aw": null, // TODO: HLTV id for AW
-  "artfr0st": null, // TODO: HLTV id for ArtFr0st
-  "belchonokk": null, // TODO: HLTV id for BELCHONOKK
-  "batuuu": null, // TODO: HLTV id for Batuuu
-  "brollan": null, // TODO: HLTV id for Brollan
-  "clasia": null, // TODO: HLTV id for CLASIA
-  "cypher": null, // TODO: HLTV id for CYPHER
-  "callme": null, // TODO: HLTV id for Callme
-  "chop": null, // TODO: HLTV id for Chop
-  "chopper": null, // TODO: HLTV id for Chopper
-  "ciocardau": null, // TODO: HLTV id for Ciocardau
-  "closer": null, // TODO: HLTV id for Closer
-  "crunchy": null, // TODO: HLTV id for Crunchy
-  "cryptic": null, // TODO: HLTV id for Cryptic
-  "dgl": null, // TODO: HLTV id for DGL
-  "dengzoe": null, // TODO: HLTV id for Dengzoe
-  "drox": null, // TODO: HLTV id for Drox
-  "elfmelk": null, // TODO: HLTV id for ELFMELK
-  "fallen": null, // TODO: HLTV id for FalleN
-  "grizz": null, // TODO: HLTV id for Grizz
-  "heavygod": null, // TODO: HLTV id for HeavyGod
-  "hext": null, // TODO: HLTV id for HexT
-  "icarus": null, // TODO: HLTV id for Icarus
-  "jambo": null, // TODO: HLTV id for Jambo
-  "jame": null, // TODO: HLTV id for Jame
-  "jayy2s": null, // TODO: HLTV id for Jayy2s
-  "jimpphat": null, // TODO: HLTV id for Jimpphat
-  "johnsm1th": null, // TODO: HLTV id for JohnSm1th
-  "junior": null, // TODO: HLTV id for Junior
-  "krimz": null, // TODO: HLTV id for KRiMZ
-  "kscerato": null, // TODO: HLTV id for KSCerato
-  "karrigan": 429, // Karrigan
-  "kiro": null, // TODO: HLTV id for Kiro
-  "kobe": null, // TODO: HLTV id for Kobe
-  "kofte": null, // TODO: HLTV id for Kofte
-  "kusme": null, // TODO: HLTV id for KusMe
-  "lake": null, // TODO: HLTV id for Lake
-  "matys": null, // TODO: HLTV id for MATYS
-  "magnojez": null, // TODO: HLTV id for Magnojez
-  "mihile": null, // TODO: HLTV id for Mihile
-  "mingovi": null, // TODO: HLTV id for Mingovi
-  "nathon": null, // TODO: HLTV id for Nathon
-  "norwi": null, // TODO: HLTV id for Norwi
-  "p3r3iira": null, // TODO: HLTV id for P3R3IIRA
-  "peach": null, // TODO: HLTV id for Peach
-  "rafaxf": null, // TODO: HLTV id for Rafaxf
-  "re1gn": null, // TODO: HLTV id for Re1GN
-  "scorth": null, // TODO: HLTV id for Scorth
-  "scr0b": null, // TODO: HLTV id for Scr0b
-  "seabraez": null, // TODO: HLTV id for SeabraEZ
-  "something": null, // TODO: HLTV id for Something
-  "spinx": 16949, // Spinx
-  "st0m4k": null, // TODO: HLTV id for St0m4k
-  "sunpayus": 15858, // SunPayus
-  "swisher": null, // TODO: HLTV id for Swisher
-  "toao": null, // TODO: HLTV id for TOAO
-  "triplus": null, // TODO: HLTV id for TRIPLUS
-  "toonge": null, // TODO: HLTV id for ToongE
-  "void": null, // TODO: HLTV id for Void
-  "walco": null, // TODO: HLTV id for Walco
-  "wolfy": null, // TODO: HLTV id for WolfY
-  "x5g7v": null, // TODO: HLTV id for X5G7V
-  "xielo": null, // TODO: HLTV id for XiELO
-  "yekindar": null, // TODO: HLTV id for YEKINDAR
-  "zccnb666": null, // TODO: HLTV id for Zccnb666
-  "zest": null, // TODO: HLTV id for Zest
-  "zont1x": null, // TODO: HLTV id for Zont1x
-  "zywoo": 11893, // ZywOo
-  "apex": null, // TODO: HLTV id for apEX
-  "blamef": 15165, // blameF
-  "boombl4": null, // TODO: HLTV id for boombl4
-  "broky": 16555, // broky
-  "donk": 22729, // donk
-  "flamez": 20102, // flameZ
-  "frozen": 7187, // frozen
-  "hunter": 9647, // huNter-
-  "rain": 8183, // rain
-  "ropz": 11816, // ropz
-  "torzsi": 19619, // torzsi
-  "xertion": 20424 // xertioN
-};
+            "adron": null, // TODO: HLTV id for ADRON
+            "aw": null, // TODO: HLTV id for AW
+            "artfr0st": null, // TODO: HLTV id for ArtFr0st
+            "belchonokk": null,
+            "batuuu": null,
+            "brollan": null,
+            "clasia": null,
+            "cypher": null,
+            "callme": null,
+            "chop": null,
+            "chopper": null,
+            "ciocardau": null,
+            "closer": null,
+            "crunchy": null,
+            "cryptic": null,
+            "dgl": null,
+            "dengzoe": null,
+            "drox": null,
+            "elfmelk": null,
+            "fallen": null,
+            "grizz": null,
+            "heavygod": null,
+            "hext": null,
+            "icarus": null,
+            "jambo": null,
+            "jame": null,
+            "jayy2s": null,
+            "jimpphat": null,
+            "johnsm1th": null,
+            "junior": null,
+            "krimz": null,
+            "kscerato": null,
+            "karrigan": 429, // Karrigan
+            "spinx": 16949, // Spinx
+            "sunpayus": 15858, // SunPayus
+            "zywoo": 11893, // ZywOo
+            "blamef": 15165, // blameF
+            "broky": 16555, // broky
+            "donk": 22729, // donk
+            "flamez": 20102, // flameZ
+            "frozen": 7187, // frozen
+            "hunter": 9647, // huNter-
+            "rain": 8183, // rain
+            "ropz": 11816, // ropz
+            "torzsi": 19619, // torzsi
+            "xertion": 20424 // xertioN
+          };
 
-          // ---------- helpers ----------
-          function listFiles(root='.') {
-            const out=[];
-            function walk(dir, depth=0){
-              if (depth>4) return;
-              for (const name of fs.readdirSync(dir)) {
-                const p = dir + '/' + name;
-                const st = fs.statSync(p);
-                if (st.isDirectory()) walk(p, depth+1);
-                else out.push(p.replace(/^\.\//,''));
-              }
-            }
-            walk('.');
-            return out;
-          }
-          function firstThatMatches(paths, patterns) {
-            for (const pat of patterns) {
-              const rx = new RegExp(pat.replace(/\*/g,'.*'), 'i');
-              const hit = paths.find(p => rx.test(p));
-              if (hit) return hit;
-            }
-            return null;
-          }
+          // -------------------- HELPERS --------------------
+          const impliedProb = (dec) => (isFinite(dec) && dec>0 ? 1/dec : 0.526);
+          const shrink = (rate,n,base,k)=>((n*rate+k*base)/((n+k)||1));
+          function erf(x){const s=x<0?-1:1;x=Math.abs(x);const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;const t=1/(1+p*x);const y=1-(((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t)*Math.exp(-x*x);return s*y;}
+
           const writeCSV = (rows, path) => {
             try { const csv = Papa.unparse(rows || [], { quotes: true }); fs.writeFileSync(path, csv); }
-            catch (e) { console.error('writeCSV error for', path, e?.message); try { fs.writeFileSync(path, ''); } catch {} }
+            catch (e) { fs.writeFileSync(path, ''); }
           };
           const readCSVauto = (path) => {
-            try { const txt = fs.readFileSync(path, 'utf8'); const parsed = Papa.parse(txt, { header: true, skipEmptyLines: true }); return parsed.data || []; }
-            catch (e) { console.error('Could not read CSV at', path, e?.message); return []; }
+            try { const txt = fs.readFileSync(path, 'utf8'); return Papa.parse(txt, { header: true }).data; }
+            catch { return []; }
           };
-          async function withRetry(fn, {tries=3, delay=700}={}){ let last; for (let i=0;i<tries;i++){ try { return await fn(); } catch(e){ last=e; await sleep(delay); } } throw last; }
-          function erf(x){ const s=x<0?-1:1; x=Math.abs(x);
-            const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
-            const t=1/(1+p*x); const y=1-(((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t)*Math.exp(-x*x); return s*y; }
-          const impliedProb = (d) => (isFinite(d)&&d>0?1/d:0.526);
-          const shrink = (rate,n,base,k)=>((n*rate+k*base)/((n+k)||1));
-          function lev(a,b){
-            a=String(a); b=String(b);
-            const m=a.length,n=b.length; if(!m) return n; if(!n) return m;
-            const dp=Array.from({length:m+1},(_,i)=>Array(n+1).fill(0));
-            for(let i=0;i<=m;i++) dp[i][0]=i; for(let j=0;j<=n;j++) dp[0][j]=j;
-            for(let i=1;i<=m;i++) for(let j=1;j<=n;j++){
-              const cost=a[i-1]===b[j-1]?0:1;
-              dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+cost);
-            }
-            return dp[m][n];
-          }
-          const sim=(a,b)=>{const L=Math.max(String(a).length,String(b).length)||1; return 1-(lev(a,b)/L);};
 
-          function extractPlayerIdFromHtml(html){
-            const re = /\/player\/(\d+)\/[a-z0-9-]+/ig;
-            let m; const seen=new Set(); const ids=[];
-            while ((m = re.exec(html)) !== null) {
-              if (!seen.has(m[1])) { ids.push(parseInt(m[1],10)); seen.add(m[1]); }
-              if (ids.length>=5) break;
-            }
-            return ids;
-          }
-          async function hltvSearchByName(name){
-            const q = encodeURIComponent(String(name||'').trim());
-            const urls = [
-              `https://www.hltv.org/stats/players?search=${q}`,
-              `https://www.hltv.org/search?query=${q}`
-            ];
-            for (const url of urls) {
-              try {
-                const res = await withRetry(() => fetch(url, { headers: { 'user-agent': UA }}), {tries: 3, delay: 900});
-                if (!res.ok) continue;
-                const html = await res.text();
-                const ids = extractPlayerIdFromHtml(html);
-                if (ids && ids.length) return { id: ids[0], candidates: ids };
-              } catch (e) {}
-              await sleep(400);
-            }
-            return { id: null, candidates: [] };
-          }
-
+          // -------------------- MAIN --------------------
           (async () => {
-            const INPUT_PATH   = (process.env.UD_CSV_PATH||'').trim();
-            const LOOKBACK_DAYS= parseInt(process.env.LOOKBACK_DAYS||'60',10);
-            const THROTTLE_MS  = parseInt(process.env.THROTTLE_MS  ||'350',10);
+            const csvPath = process.env.UD_CSV_PATH || 'underdog_props_esports.csv';
+            const LOOKBACK_DAYS = parseInt(process.env.LOOKBACK_DAYS||'60',10);
+            const THROTTLE_MS   = parseInt(process.env.THROTTLE_MS||'350',10);
             const leagueKPR = 0.68, leagueHS = 0.46, EXPECTED_ROUNDS = 50;
 
-            // Resolve CSV
-            let csvPath = INPUT_PATH;
-            if (!csvPath || !fs.existsSync(csvPath)) {
-              const files = listFiles('.');
-              csvPath = firstThatMatches(files, [
-                '^underdog_props_esports\\.csv$',
-                '^underdog_props_esports.*\\.csv$',
-                'underdog.*props.*esports.*\\.csv$'
-              ]) || '';
-            }
-            if (!csvPath) {
-              console.error('CSV not found. Set ud_csv_path or commit the file.');
-              for (const f of ['hl_players_mapped.csv','hl_players_unmapped.csv','hltv_player_form.csv','hltv_projections.csv','ud_vs_model_edges.csv'])
-                try { fs.writeFileSync(f,''); } catch {}
+            if (!fs.existsSync(csvPath)) {
+              console.error("CSV not found:", csvPath);
+              writeCSV([], 'ud_vs_model_edges.csv');
               return;
             }
-            console.log('Using UD CSV:', csvPath);
 
-            // Load CSV
-            const ud = readCSVauto(csvPath);
-            console.log('UD rows found:', ud.length);
+            const ud = readCSVauto(csvPath).map(r => ({
+              player: r.player?.trim(),
+              market: r.market,
+              side: r.side,
+              line: parseFloat(r.line),
+              dec_odds: parseFloat(r.decimal_price)
+            })).filter(x=>x.player && x.market && isFinite(x.line));
 
-            const pick = (r,k)=>{ for(const key of k) if (r.hasOwnProperty(key)&&r[key]!=null&&r[key]!=='') return r[key]; return ''; };
+            const csRows = ud.filter(x=>/kills_on_maps_1_2|headshots_on_maps_1_2/i.test(x.market));
+            console.log("CS2 rows:", csRows.length);
 
-            const rows = ud.map(r=>{
-              const player = String(pick(r,['player'])).trim();
-              const sport  = String(pick(r,['sport_name','sport'])).trim();
-              const market = String(pick(r,['market'])).trim();
-              let line = pick(r,['line']);
-              if (!(isFinite(parseFloat(line)))) {
-                const ss = String(pick(r,['selection_subheader','display'])).toLowerCase();
-                const m = /(\d+(?:\.\d+)?)/.exec(ss);
-                line = m ? m[1] : '';
-              }
-              line = parseFloat(line);
-              const side = String(pick(r,['side'])).toLowerCase();
-              const dec  = parseFloat(pick(r,['decimal_price']));
-              return { player, sport, market, side, line, dec_odds: isFinite(dec)?dec:1.90 };
-            }).filter(x=>x.player && x.market);
-
-            // Keep CS2 props
-            const csRows = rows.filter(x=>{
-              const isCS = String(x.sport||'').toUpperCase()==='CS' || /kills_on_maps_1_2|headshots_on_maps_1_2/i.test(x.market);
-              const m = x.market.toLowerCase();
-              const okMkt = m.includes('kills_on_maps_1_2') || m.includes('headshots_on_maps_1_2');
-              return isCS && okMkt && isFinite(x.line);
+            // Map players via ALIASES
+            const mapped = csRows.map(r=>{
+              const id = Number.isFinite(+ALIASES[norm(r.player)]) ? +ALIASES[norm(r.player)] : null;
+              return { ...r, hltv_id:id };
             });
-            console.log('CS2 rows to project:', csRows.length);
-            if (!csRows.length) {
-              for (const f of ['hl_players_mapped.csv','hl_players_unmapped.csv','hltv_player_form.csv','hltv_projections.csv','ud_vs_model_edges.csv'])
-                try { fs.writeFileSync(f,''); } catch {}
-              return;
-            }
 
-            // Map each unique player name
-            let playersDir = [];
-            try {
-              const res = await withRetry(() => fetch('https://hltv-api.vercel.app/api/players', { headers: { 'user-agent': UA }}));
-              playersDir = await res.json();
-            } catch (e) {
-              console.error('Hosted players dir fetch failed:', e?.message);
-            }
-            const pool = (playersDir || []).flatMap(p=>{
-              const id = p.id || p.playerId || p._id;
-              const nickname = p.nickname || '';
-              const realname = p.name || '';
-              const arr=[];
-              if (id && nickname) arr.push({ id, shown:nickname, key:norm(nickname) });
-              if (id && realname) arr.push({ id, shown:realname, key:norm(realname) });
-              return arr;
-            });
-            const exactIndex = new Map();
-            for (const c of pool) if (c.key && c.id && !exactIndex.has(c.key)) exactIndex.set(c.key, c);
-            function bestCandidates(udName,k=5){
-              const key = norm(udName);
-              const e = exactIndex.get(key);
-              if (e) return [{ id:e.id, nickname:e.shown, score:1.0 }];
-              const res = pool.map(c=>{
-                let score=0;
-                if (c.key.startsWith(key) || key.startsWith(c.key)) score = 0.96;
-                else if (c.key.includes(key) || key.includes(c.key)) score = 0.93;
-                else score = 0.80 * (function sim(a,b){const L=Math.max(String(a).length,String(b).length)||1; return 1-( (function lev(a,b){a=String(a); b=String(b); const m=a.length,n=b.length; if(!m) return n; if(!n) return m; const dp=Array.from({length:m+1},(_,i)=>Array(n+1).fill(0)); for(let i=0;i<=m;i++) dp[i][0]=i; for(let j=0;j<=n;j++) dp[0][j]=j; for(let i=1;i<=m;i++) for(let j=1;j<=n;j++){ const cost=a[i-1]===b[j-1]?0:1; dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+cost);} return dp[m][n]; })(a,b)/L );})(key,c.key);
-                return { id:c.id, nickname:c.shown, score };
-              });
-              res.sort((a,b)=>b.score-a.score);
-              return res.slice(0,k);
-            }
-
-            const uniquePlayers = [...new Set(csRows.map(x=>x.player))];
-            const mapped=[], unmapped=[];
-            for (const udName of uniquePlayers) {
-              const key = norm(udName);
-
-              // 1) ALIASES (numbers only)
-              let id = Number.isFinite(+ALIASES[key]) ? +ALIASES[key] : null;
-              let source = id ? 'alias' : '';
-
-              // 2) fuzzy
-              if (!id) {
-                const cands = bestCandidates(udName, 3);
-                if (cands.length && cands[0].score >= 0.93) {
-                  id = cands[0].id; source = 'fuzzy';
-                }
-              }
-
-              // 3) live HLTV search
-              if (!id) {
-                try {
-                  const q = encodeURIComponent(String(udName||'').trim());
-                  const urls = [
-                    `https://www.hltv.org/stats/players?search=${q}`,
-                    `https://www.hltv.org/search?query=${q}`
-                  ];
-                  for (const url of urls) {
-                    const res = await withRetry(() => fetch(url, { headers: { 'user-agent': UA }}), {tries: 3, delay: 900});
-                    if (res.ok) {
-                      const html = await res.text();
-                      const re = /\/player\/(\d+)\/[a-z0-9-]+/ig;
-                      let m; const seen=new Set(); const ids=[];
-                      while ((m = re.exec(html)) !== null) {
-                        if (!seen.has(m[1])) { ids.push(parseInt(m[1],10)); seen.add(m[1]); }
-                        if (ids.length>=5) break;
-                      }
-                      if (ids.length){ id = ids[0]; source='hltv-search'; break; }
-                    }
-                    await sleep(400);
-                  }
-                } catch (e) {}
-                await sleep(isFinite(THROTTLE_MS)?THROTTLE_MS:350);
-              }
-
-              if (id) mapped.push({ ud_name: udName, hltv_id: id, source });
-              else {
-                const cands = bestCandidates(udName, 5);
-                unmapped.push({
-                  ud_name: udName,
-                  suggestion_1: cands[0]?.nickname || '', suggestion_1_id: cands[0]?.id || '', suggestion_1_score: cands[0]?.score?.toFixed(3) || '',
-                  suggestion_2: cands[1]?.nickname || '', suggestion_2_id: cands[1]?.id || '', suggestion_2_score: cands[1]?.score?.toFixed(3) || '',
-                  suggestion_3: cands[2]?.nickname || '', suggestion_3_id: cands[2]?.id || '', suggestion_3_score: cands[2]?.score?.toFixed(3) || '',
-                  suggestion_4: cands[3]?.nickname || '', suggestion_4_id: cands[3]?.id || '', suggestion_4_score: cands[3]?.score?.toFixed(3) || '',
-                  suggestion_5: cands[4]?.nickname || '', suggestion_5_id: cands[4]?.id || '', suggestion_5_score: cands[4]?.score?.toFixed(3) || '',
-                });
-              }
-            }
-            writeCSV(mapped, 'hl_players_mapped.csv');
-            writeCSV(unmapped, 'hl_players_unmapped.csv');
-
-            const withIDs = mapped.filter(x => String(x.hltv_id).trim() !== '');
-            console.log('Mapped (alias/fuzzy/search):', withIDs.length, '/', mapped.length);
-
-            if (!withIDs.length) {
-              for (const f of ['hltv_player_form.csv','hltv_projections.csv','ud_vs_model_edges.csv'])
-                try { fs.writeFileSync(f,''); } catch {}
-              return;
-            }
-
-            // Pull HLTV stats
+            // Fetch stats
             const today = new Date();
-            const startDate = new Date(today.getTime()-parseInt(process.env.LOOKBACK_DAYS||'60',10)*24*3600*1000).toISOString().slice(0,10);
-            const endDate = today.toISOString().slice(0,10);
+            const startDate = new Date(today.getTime() - LOOKBACK_DAYS*86400000).toISOString().slice(0,10);
+            const endDate   = today.toISOString().slice(0,10);
             const stats=[];
-            for (const m of withIDs) {
-              try{
-                const s = await withRetry(()=>HLTV.getPlayerStats({ id: m.hltv_id, startDate, endDate }), {tries:3, delay:700});
+            for (const m of mapped.filter(x=>x.hltv_id)) {
+              try {
+                const s = await HLTV.getPlayerStats({ id:m.hltv_id, startDate, endDate });
                 stats.push({
                   playerId:m.hltv_id,
-                  nickname:s?.player?.nickname || m.ud_name,
-                  team:s?.team?.name || '',
+                  nickname:s?.player?.nickname || m.player,
+                  team:s?.team?.name||'',
                   maps:s?.overview?.mapsPlayed,
                   kpr:s?.overview?.kpr,
                   hsPct:s?.overview?.hsPercentage,
                   adr:s?.overview?.adr,
-                  rating:s?.overview?.rating1,
-                  source:m.source
+                  rating:s?.overview?.rating1
                 });
-              }catch(e){ console.error('getPlayerStats fail', m.hltv_id, m.ud_name, e?.message); }
-              await sleep(isFinite(THROTTLE_MS)?THROTTLE_MS:350);
+              } catch(e){ console.error("Stats fail for",m.player,e.message); }
+              await sleep(THROTTLE_MS);
             }
-            writeCSV(stats, 'hltv_player_form.csv');
+            writeCSV(stats,'hltv_player_form.csv');
 
-            // Projections
-            const pf = new Map(stats.map(r=>[norm(r.nickname), r]));
-            const proj=[];
-            for (const r of stats) {
-              const maps=+r.maps||0, kpr=+r.kpr||0.68, hs=+r.hsPct||0.46;
-              const kprAdj=shrink(kpr,maps,0.68,maps<25?40:25);
-              const hsAdj=shrink(hs,maps,0.46,maps<25?60:40);
-              const muKills=50*kprAdj;
-              proj.push({ player:r.nickname, team:r.team, maps, kprAdj:+kprAdj.toFixed(3), hsAdj:+hsAdj.toFixed(3), projKills:+muKills.toFixed(1), projHS:+(muKills*hsAdj).toFixed(1) });
-            }
-            writeCSV(proj, 'hltv_projections.csv');
-
-            // Edges
-            function tailProbOver(line,mu,var_) {
-              const sigma=Math.sqrt(Math.max(var_,1e-6));
-              const z=(line-mu)/sigma;
-              const pOver=1-0.5*(1+erf(z/Math.SQRT2));
-              return { pOver, pUnder:1-pOver, sigma };
-            }
+            // Projections + edges
+            const pf=new Map(stats.map(r=>[norm(r.nickname),r]));
             const edges=[];
-            for (const u of csRows) {
-              const f = pf.get(norm(u.player));
-              if (!f || !isFinite(u.line)) continue;
-
+            for(const u of mapped){
+              const f=pf.get(norm(u.player)); if(!f) continue;
               const maps=+f.maps||0, kpr=+f.kpr||0.68, hs=+f.hsPct||0.46;
               const kprAdj=shrink(kpr,maps,0.68,maps<25?40:25);
               const hsAdj=shrink(hs,maps,0.46,maps<25?60:40);
-              const muKills=50*kprAdj;
-
-              let mu, variance;
-              const mkt=u.market.toLowerCase();
-              if (mkt.includes('kills_on_maps_1_2')) {
-                mu=muKills; variance=50*kprAdj*(1-kprAdj)+3.0;
-              } else if (mkt.includes('headshots_on_maps_1_2')) {
-                mu=muKills*hsAdj; variance=muKills*hsAdj*(1-hsAdj)+2.0;
-              } else continue;
-
-              const { pOver, pUnder, sigma } = tailProbOver(u.line, mu, variance);
-              const modelProb = u.side==='over'?pOver:pUnder;
-              const implied = impliedProb(u.dec_odds);
-              const edge = modelProb - implied;
-
-              edges.push({
-                player:u.player, team:f.team||'', market:u.market, side:u.side,
-                ud_line:+u.line.toFixed(1), ud_dec:+u.dec_odds,
-                our_mu:+mu.toFixed(2), our_sigma:+sigma.toFixed(2),
-                prob_over:+pOver.toFixed(3), prob_under:+pUnder.toFixed(3),
-                model_prob:+modelProb.toFixed(3), edge:+edge.toFixed(3),
-                sample_maps:f.maps, id_source:f.source || ''
-              });
+              const muKills=EXPECTED_ROUNDS*kprAdj;
+              let mu,variance;
+              if(u.market.toLowerCase().includes('kills')){mu=muKills;variance=EXPECTED_ROUNDS*kprAdj*(1-kprAdj)+3;}
+              else {mu=muKills*hsAdj;variance=muKills*hsAdj*(1-hsAdj)+2;}
+              const sigma=Math.sqrt(Math.max(variance,1e-6));
+              const z=(u.line-mu)/sigma;
+              const pOver=1-0.5*(1+erf(z/Math.SQRT2));
+              const modelProb=u.side==='over'?pOver:1-pOver;
+              const edge=modelProb-impliedProb(u.dec_odds);
+              edges.push({player:u.player,team:f.team,market:u.market,side:u.side,ud_line:u.line,our_mu:+mu.toFixed(2),edge:+edge.toFixed(3)});
             }
             edges.sort((a,b)=>b.edge-a.edge);
             writeCSV(edges,'ud_vs_model_edges.csv');
-
-            console.log(`Done. CS rows: ${csRows.length}, mapped (alias/fuzzy/search): ${withIDs.length}, HLTV stats: ${stats.length}, edges: ${edges.length}`);
-          })().catch(err=>{
-            console.error('Top-level error:', err?.message);
-            for (const f of ['hl_players_mapped.csv','hl_players_unmapped.csv','hltv_player_form.csv','hltv_projections.csv','ud_vs_model_edges.csv'])
-              try { fs.writeFileSync(f,''); } catch {}
-            process.exitCode = 0;
-          });
+          })();
           JS
 
       - name: Upload artifacts
@@ -469,9 +198,6 @@ jobs:
           name: hltv_from_ud_edges
           path: |
             ${{ inputs.ud_csv_path }}
-            hl_players_mapped.csv
-            hl_players_unmapped.csv
             hltv_player_form.csv
-            hltv_projections.csv
             ud_vs_model_edges.csv
           if-no-files-found: warn
