@@ -1,11 +1,11 @@
-name: HLTV projections from YOUR Underdog CSV (player column mapping)
+name: HLTV projections from YOUR Underdog CSV (auto-detect + player mapping)
 on:
   workflow_dispatch:
     inputs:
       ud_csv_path:
-        description: "Path to your Underdog CSV (committed in this repo)"
-        required: true
-        default: "underdog_props_esports.csv"
+        description: "Path to your Underdog CSV (leave blank to auto-detect)"
+        required: false
+        default: ""
       lookback_days:
         description: "HLTV player stats lookback window (days)"
         required: false
@@ -24,11 +24,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Show repo tree (confirm CSV path)
-        run: |
-          echo "== Repo tree (depth 3) =="
-          find . -maxdepth 3 -type f | sed 's|^\./||' | sort
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -37,7 +32,7 @@ jobs:
       - name: Install deps
         run: npm i hltv papaparse
 
-      - name: Build CS2 projections using CSV 'player' column for HLTV mapping
+      - name: Build CS2 projections (auto-detect CSV, use 'player' column)
         env:
           UD_CSV_PATH: ${{ inputs.ud_csv_path }}
           LOOKBACK_DAYS: ${{ inputs.lookback_days }}
@@ -49,79 +44,58 @@ jobs:
           const fs = require('fs');
           const Papa = require('papaparse');
 
-          // ================== Small utils ==================
+          // ================== Helpers ==================
           const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
           const norm = s => String(s||'')
             .toLowerCase()
             .normalize('NFKD').replace(/[\u0300-\u036f]/g,'') // strip accents
             .replace(/\s+/g,'')
-            .replace(/[^a-z0-9_]/g,''); // keep a-z0-9 and underscore only
+            .replace(/[^a-z0-9_]/g,''); // keep a-z0-9 and underscore
 
-          // Levenshtein (for suggestions)
-          function lev(a,b){
-            a = String(a); b = String(b);
-            const m=a.length, n=b.length;
-            if(!m) return n; if(!n) return m;
-            const dp = Array.from({length:m+1},(_,i)=>Array(n+1).fill(0));
-            for(let i=0;i<=m;i++) dp[i][0]=i;
-            for(let j=0;j<=n;j++) dp[0][j]=j;
-            for(let i=1;i<=m;i++){
-              for(let j=1;j<=n;j++){
-                const cost = a[i-1]===b[j-1]?0:1;
-                dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+cost);
+          // mini-glob over repo without extra deps
+          function listFiles(root='.') {
+            const out=[];
+            function walk(dir, depth=0){
+              if (depth>4) return;
+              for (const name of fs.readdirSync(dir)) {
+                const p = dir + '/' + name;
+                const st = fs.statSync(p);
+                if (st.isDirectory()) walk(p, depth+1);
+                else out.push(p.replace(/^\.\//,''));
               }
             }
-            return dp[m][n];
+            walk('.');
+            return out;
           }
-          const sim = (a,b) => {
-            const L = Math.max(String(a).length, String(b).length) || 1;
-            return 1 - (lev(a,b)/L);
-          };
+
+          function firstThatMatches(paths, patterns) {
+            for (const pat of patterns) {
+              const rx = new RegExp(pat.replace(/\*/g,'.*'), 'i');
+              const hit = paths.find(p => rx.test(p));
+              if (hit) return hit;
+            }
+            return null;
+          }
 
           const impliedProb = (dec) => (isFinite(dec) && dec>0 ? 1/dec : 0.526);
           const shrink = (rate, n, base, k) => ((n*rate + k*base) / ((n+k)||1));
-
-          // erf polyfill (for normal CDF)
-          function erf(x){
-            const sign = x < 0 ? -1 : 1;
-            x = Math.abs(x);
+          function erf(x){ const s=x<0?-1:1; x=Math.abs(x);
             const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
-            const t = 1/(1+p*x);
-            const y = 1 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*Math.exp(-x*x);
-            return sign*y;
-          }
+            const t=1/(1+p*x); const y=1-(((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t)*Math.exp(-x*x); return s*y; }
 
           const writeCSV = (rows, path) => {
-            try {
-              const csv = Papa.unparse(rows || [], { quotes: true });
-              fs.writeFileSync(path, csv);
-            } catch (e) {
-              console.error('writeCSV error for', path, e?.message);
-              try { fs.writeFileSync(path, ''); } catch {}
-            }
+            try { const csv = Papa.unparse(rows || [], { quotes: true }); fs.writeFileSync(path, csv); }
+            catch (e) { console.error('writeCSV error for', path, e?.message); try { fs.writeFileSync(path, ''); } catch {} }
           };
           const readCSVauto = (path) => {
-            try {
-              const txt = fs.readFileSync(path, 'utf8');
-              const parsed = Papa.parse(txt, { header: true, skipEmptyLines: true });
-              return parsed.data || [];
-            } catch (e) {
-              console.error('Could not read CSV at', path, e?.message);
-              return [];
-            }
+            try { const txt = fs.readFileSync(path, 'utf8'); const parsed = Papa.parse(txt, { header: true, skipEmptyLines: true }); return parsed.data || []; }
+            catch (e) { console.error('Could not read CSV at', path, e?.message); return []; }
           };
+          async function withRetry(fn, {tries=3, delay=400}={}){ let last; for (let i=0;i<tries;i++){ try { return await fn(); } catch(e){ last=e; await sleep(delay); } } throw last; }
 
-          async function withRetry(fn, {tries=3, delay=400}={}){
-            let lastErr;
-            for (let i=0;i<tries;i++){
-              try { return await fn(); }
-              catch(e){ lastErr = e; await sleep(delay); }
-            }
-            throw lastErr;
-          }
-
+          // ================== Main ==================
           (async () => {
-            const UD_CSV_PATH   = process.env.UD_CSV_PATH || 'underdog_props_esports.csv';
+            const INPUT_PATH = (process.env.UD_CSV_PATH||'').trim();
             const LOOKBACK_DAYS = parseInt(process.env.LOOKBACK_DAYS||'60',10);
             const THROTTLE_MS   = parseInt(process.env.THROTTLE_MS  ||'350',10);
 
@@ -129,34 +103,40 @@ jobs:
             const leagueKPR = 0.68, leagueHS = 0.46;
             const EXPECTED_ROUNDS = 50; // Maps 1+2 baseline (MR12)
 
-            // Confirm CSV exists
-            if (!fs.existsSync(UD_CSV_PATH)) {
-              console.error('UD_CSV_PATH not found:', UD_CSV_PATH);
-              writeCSV([], 'hl_players_mapped.csv');
-              writeCSV([], 'hl_players_unmapped.csv');
-              writeCSV([], 'hltv_player_form.csv');
-              writeCSV([], 'hltv_projections.csv');
-              writeCSV([], 'ud_vs_model_edges.csv');
-              return;
+            // 0) Resolve CSV path (auto-detect if blank or missing)
+            let csvPath = INPUT_PATH;
+            if (!csvPath || !fs.existsSync(csvPath)) {
+              const files = listFiles('.');
+              csvPath = firstThatMatches(files, [
+                'underdog_props_esports*.csv',
+                '*underdog*props*esports*.csv',
+                '*underdog*esports*.csv',
+                '*underdog*props*.csv'
+              ]) || '';
+              if (!csvPath) {
+                console.error('Could not find UD CSV. Searched common patterns. Provide ud_csv_path when running the workflow.');
+                writeCSV([], 'hl_players_mapped.csv');
+                writeCSV([], 'hl_players_unmapped.csv');
+                writeCSV([], 'hltv_player_form.csv');
+                writeCSV([], 'hltv_projections.csv');
+                writeCSV([], 'ud_vs_model_edges.csv');
+                return;
+              }
             }
+            console.log('Using UD CSV:', csvPath);
 
             const today = new Date();
             const startDate = new Date(today.getTime() - LOOKBACK_DAYS*24*3600*1000).toISOString().slice(0,10);
             const endDate   = today.toISOString().slice(0,10);
 
-            // ============== 1) Load UD CSV ==============
-            const ud = readCSVauto(UD_CSV_PATH);
-            console.log('UD rows found:', ud.length, 'from', UD_CSV_PATH);
+            // 1) Load UD CSV (player is the source of truth)
+            const ud = readCSVauto(csvPath);
+            console.log('UD rows found:', ud.length, 'from', csvPath);
 
-            // *** IMPORTANT: use CSV 'player' column as the source of truth ***
-            // Parse only what we need for CS2 and grab numeric line from selection_subheader if needed
-            const pick = (row, keys) => {
-              for (const k of keys) if (row.hasOwnProperty(k) && row[k] != null && row[k] !== '') return row[k];
-              return '';
-            };
+            const pick = (row, keys) => { for (const k of keys) if (row.hasOwnProperty(k) && row[k] != null && row[k] !== '') return row[k]; return ''; };
 
             const rows = ud.map(r => {
-              const player = String(pick(r, ['player'])).trim(); // <-- YOUR PLAYER COLUMN
+              const player = String(pick(r, ['player'])).trim();      // <-- use 'player' column only
               const sport  = String(pick(r, ['sport_name','sport'])).trim();
               const market = String(pick(r, ['market'])).trim();
               let line = pick(r, ['line']);
@@ -168,17 +148,19 @@ jobs:
               line = parseFloat(line);
               const side = String(pick(r, ['side'])).toLowerCase();
               const dec  = parseFloat(pick(r, ['decimal_price']));
-
               return { player, sport, market, side, line, dec_odds: isFinite(dec)?dec:1.90 };
             }).filter(x => x.player && x.market);
 
-            // Keep Counter-Strike only and markets we model
+            // Filter: CS only + markets we support
             const csRows = rows.filter(x => {
-              const isCS = String(x.sport||'').toUpperCase() === 'CS';
+              const isCS = String(x.sport||'').toUpperCase() === 'CS' || /kills_on_maps_1_2|headshots_on_maps_1_2/i.test(x.market);
               const m = x.market.toLowerCase();
               const isMkt = m.includes('kills_on_maps_1_2') || m.includes('headshots_on_maps_1_2');
               return isCS && isMkt && isFinite(x.line);
             });
+
+            console.log('CS2 rows to project:', csRows.length);
+            console.log('Sample parsed (first 8):', csRows.slice(0,8).map(r => ({player:r.player, market:r.market, line:r.line, dec:r.dec_odds})));
 
             if (!csRows.length) {
               console.warn('No Counter-Strike rows to process; writing empty artifacts.');
@@ -189,12 +171,8 @@ jobs:
               writeCSV([], 'ud_vs_model_edges.csv');
               return;
             }
-            console.log('CS2 rows to project:', csRows.length);
-            console.log('Sample parsed from CSV (player, market, line):',
-                        csRows.slice(0,5).map(r => ({player:r.player, market:r.market, line:r.line})));
 
-            // ============== 2) Map UD 'player' -> HLTV IDs (nickname/name) ==============
-            // Optional manual overrides: player_aliases.csv (ud_name,hltv_id)
+            // 2) Map UD 'player' -> HLTV IDs (nickname or real name)
             const manualMap = new Map();
             if (fs.existsSync('player_aliases.csv')) {
               for (const r of readCSVauto('player_aliases.csv')) {
@@ -204,17 +182,11 @@ jobs:
               }
             }
 
-            // Seed a few common stars (helps OOTB)
-            const seeded = {
-              'donk': 22729, 'zywoo': 11893, 'm0nesy': 19230, 'monesy': 19230,
-              's1mple': 7998, 'b1t': 18987, 'niko': 3741, 'device': 7592,
-              'ropz': 11816, 'rain': 8183, 'broky': 16555, 'karrigan': 429,
-              'jabbi': 20347, 'stavn': 16787, 'xertion': 20424, 'frozen': 7187,
-              'blamef': 15165
-            };
+            // seed a few popular aliases
+            const seeded = { 'donk': 22729, 'zywoo': 11893, 'm0nesy': 19230, 'monesy': 19230, 'blamef': 15165, 's1mple': 7998, 'niko': 3741 };
             for (const [k,v] of Object.entries(seeded)) if (!manualMap.has(k)) manualMap.set(k, v);
 
-            // Pull HLTV players directory (nickname & name → id)
+            // Pull HLTV player directory
             let playersDir = [];
             try {
               const res = await withRetry(() => fetch('https://hltv-api.vercel.app/api/players', { headers: { 'user-agent': 'hltv-csv-mapper' }}));
@@ -223,7 +195,7 @@ jobs:
               console.error('Hosted /players fetch failed:', e?.message);
             }
 
-            // Build candidate pool: both nickname and real name fields
+            // Build candidate pool of nickname + real name
             const pool = (playersDir || []).flatMap(p => {
               const id = p.id || p.playerId || p._id;
               const nickname = p.nickname || '';
@@ -234,46 +206,54 @@ jobs:
               return arr;
             });
 
-            // Exact index for fast match
-            const exactIndex = new Map();
-            for (const c of pool) if (c.key && c.id && !exactIndex.has(c.key)) exactIndex.set(c.key, c);
+            // Exact index for super-fast hits
+            const exact = new Map();
+            for (const c of pool) if (c.key && c.id && !exact.has(c.key)) exact.set(c.key, c);
+
+            // fuzzy helpers
+            function lev(a,b){
+              a = String(a); b = String(b);
+              const m=a.length, n=b.length;
+              if(!m) return n; if(!n) return m;
+              const dp = Array.from({length:m+1},(_,i)=>Array(n+1).fill(0));
+              for(let i=0;i<=m;i++) dp[i][0]=i;
+              for(let j=0;j<=n;j++) dp[0][j]=j;
+              for(let i=1;i<=m;i++){
+                for(let j=1;j<=n;j++){
+                  const cost = a[i-1]===b[j-1]?0:1;
+                  dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+cost);
+                }
+              }
+              return dp[m][n];
+            }
+            const sim = (a,b) => { const L=Math.max(String(a).length,String(b).length)||1; return 1 - (lev(a,b)/L); };
 
             function bestCandidates(udName, k=5){
               const key = norm(udName);
-              const results = [];
-              // Try exact first
-              const exact = exactIndex.get(key);
-              if (exact) return [{ id: exact.id, nickname: exact.shown, score: 1.0 }];
-
-              // Fuzzy: includes/startsWith/lev
+              const list = [];
+              const e = exact.get(key);
+              if (e) return [{ id: e.id, nickname: e.shown, score: 1.0 }];
               for (const c of pool) {
                 let score = 0;
                 if (c.key.startsWith(key) || key.startsWith(c.key)) score = 0.96;
                 else if (c.key.includes(key) || key.includes(c.key)) score = 0.93;
                 else score = 0.80 * sim(key, c.key);
-                results.push({ id: c.id, nickname: c.shown, score });
+                list.push({ id: c.id, nickname: c.shown, score });
               }
-              results.sort((a,b)=> b.score - a.score);
-              return results.slice(0,k);
+              list.sort((a,b)=> b.score - a.score);
+              return list.slice(0,k);
             }
 
             const uniquePlayers = [...new Set(csRows.map(x => x.player))];
-
-            const mapped = [];
-            const unmapped = [];
+            const mapped = [], unmapped = [];
             for (const udName of uniquePlayers) {
               const key = norm(udName);
-
-              // 1) manual/seed alias?
               let hltvId = manualMap.get(key) || null;
               let nickname = null;
-
-              // 2) try exact nickname/realname, then suggestions
               if (!hltvId) {
                 const cands = bestCandidates(udName, 5);
                 if (cands.length && cands[0].score >= 0.93) {
-                  hltvId = cands[0].id;
-                  nickname = cands[0].nickname;
+                  hltvId = cands[0].id; nickname = cands[0].nickname;
                 } else {
                   unmapped.push({
                     ud_name: udName,
@@ -285,7 +265,6 @@ jobs:
                   });
                 }
               }
-
               mapped.push({ ud_name: udName, hltv_id: hltvId || '', nickname: nickname || udName });
             }
             writeCSV(mapped, 'hl_players_mapped.csv');
@@ -293,11 +272,13 @@ jobs:
 
             const withIDs = mapped.filter(x => String(x.hltv_id).trim() !== '');
             console.log('Mapped to HLTV IDs:', withIDs.length, '/', mapped.length);
-            if (unmapped.length) {
-              console.log(`Unmapped players: ${unmapped.length} (see hl_players_unmapped.csv and add entries to player_aliases.csv as needed)`);
-            }
+            if (unmapped.length) console.log(`Unmapped players: ${unmapped.length} (see hl_players_unmapped.csv)`);
 
-            // ============== 3) Pull HLTV player stats (with retries) ==============
+            // 3) HLTV stats
+            const today = new Date();
+            const startDate = new Date(today.getTime() - LOOKBACK_DAYS*24*3600*1000).toISOString().slice(0,10);
+            const endDate   = today.toISOString().slice(0,10);
+
             const stats = [];
             for (const m of withIDs) {
               try {
@@ -321,9 +302,9 @@ jobs:
             }
             writeCSV(stats, 'hltv_player_form.csv');
 
-            // ============== 4) Projections (conservative) ==============
+            // 4) Projections
             const pf = new Map(stats.map(r => [norm(r.nickname), r]));
-            const projRows = [];
+            const proj = [];
             for (const r of stats) {
               const maps = +r.maps || 0;
               const kpr  = +r.kpr  || leagueKPR;
@@ -331,15 +312,11 @@ jobs:
               const kprAdj = shrink(kpr, maps, leagueKPR, maps < 25 ? 40 : 25);
               const hsAdj  = shrink(hs,  maps, leagueHS,  maps < 25 ? 60 : 40);
               const muKills = EXPECTED_ROUNDS * kprAdj;
-              projRows.push({
-                player: r.nickname, team: r.team, maps,
-                kprAdj: +kprAdj.toFixed(3), hsAdj: +hsAdj.toFixed(3),
-                projKills: +muKills.toFixed(1), projHS: +(muKills*hsAdj).toFixed(1)
-              });
+              proj.push({ player: r.nickname, team: r.team, maps, kprAdj:+kprAdj.toFixed(3), hsAdj:+hsAdj.toFixed(3), projKills:+muKills.toFixed(1), projHS:+(muKills*hsAdj).toFixed(1) });
             }
-            writeCSV(projRows, 'hltv_projections.csv');
+            writeCSV(proj, 'hltv_projections.csv');
 
-            // ============== 5) Join vs UD props + probabilities/edges ==============
+            // 5) Edges
             function tailProbOver(line, mu, variance) {
               const sigma = Math.sqrt(Math.max(variance, 1e-6));
               const z = (line - mu)/sigma;
@@ -347,7 +324,7 @@ jobs:
               return { pOver, pUnder: 1 - pOver, sigma };
             }
 
-            const outEdges = [];
+            const edges = [];
             for (const u of csRows) {
               const form = pf.get(norm(u.player));
               if (!form || !isFinite(u.line)) continue;
@@ -363,40 +340,31 @@ jobs:
               const mkt = u.market.toLowerCase();
               if (mkt.includes('kills_on_maps_1_2')) {
                 mu = muKills;
-                variance = EXPECTED_ROUNDS * kprAdj * (1 - kprAdj) + 3.0; // cushion
+                variance = EXPECTED_ROUNDS * kprAdj * (1 - kprAdj) + 3.0;
               } else if (mkt.includes('headshots_on_maps_1_2')) {
                 mu = muKills * hsAdj;
-                variance = muKills * hsAdj * (1 - hsAdj) + 2.0;          // cushion
-              } else {
-                continue;
-              }
+                variance = muKills * hsAdj * (1 - hsAdj) + 2.0;
+              } else continue;
 
               const { pOver, pUnder, sigma } = tailProbOver(u.line, mu, variance);
               const modelProb = u.side === 'over' ? pOver : pUnder;
               const implied = impliedProb(u.dec_odds);
               const edge = modelProb - implied;
 
-              outEdges.push({
-                player: u.player,
-                team: form.team || '',
-                market: u.market,
-                side: u.side,
-                ud_line: +u.line.toFixed(1),
-                ud_dec: +u.dec_odds,
-                our_mu: +mu.toFixed(2),
-                our_sigma: +sigma.toFixed(2),
-                prob_over: +pOver.toFixed(3),
-                prob_under: +pUnder.toFixed(3),
-                model_prob: +modelProb.toFixed(3),
-                edge: +edge.toFixed(3),
+              edges.push({
+                player: u.player, team: form.team || '', market: u.market, side: u.side,
+                ud_line: +u.line.toFixed(1), ud_dec: +u.dec_odds,
+                our_mu: +mu.toFixed(2), our_sigma: +sigma.toFixed(2),
+                prob_over: +pOver.toFixed(3), prob_under: +pUnder.toFixed(3),
+                model_prob: +modelProb.toFixed(3), edge: +edge.toFixed(3),
                 sample_maps: form.maps
               });
             }
 
-            outEdges.sort((a,b)=> b.edge - a.edge);
-            writeCSV(outEdges, 'ud_vs_model_edges.csv');
+            edges.sort((a,b)=> b.edge - a.edge);
+            writeCSV(edges, 'ud_vs_model_edges.csv');
 
-            console.log(`Done. CS rows: ${csRows.length}, mapped IDs: ${withIDs.length}, HLTV stats: ${stats.length}, edges: ${outEdges.length}`);
+            console.log(`Done. CS rows: ${csRows.length}, mapped IDs: ${withIDs.length}, HLTV stats: ${stats.length}, edges: ${edges.length}`);
           })().catch(err => {
             console.error('Top-level error:', err?.message);
             try { fs.writeFileSync('hl_players_mapped.csv', ''); } catch {}
@@ -414,7 +382,6 @@ jobs:
           name: hltv_from_ud_edges
           path: |
             ${{ inputs.ud_csv_path }}
-            player_aliases.csv
             hl_players_mapped.csv
             hl_players_unmapped.csv
             hltv_player_form.csv
