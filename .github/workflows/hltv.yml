@@ -13,16 +13,17 @@ jobs:
           node-version: '20'
 
       - name: Install deps
-        run: npm i hltv p-limit papaparse
+        run: npm i hltv papaparse
 
-      - name: Fetch HLTV data (fault-tolerant)
+      - name: Fetch HLTV data (fault-tolerant, no ESM deps)
         run: |
           node - <<'JS'
-          const { HLTV } = require('hltv');
+          const { HLTV } = require('hltv');          // CJS-friendly import
           const fs = require('fs');
           const Papa = require('papaparse');
-          const pLimit = require('p-limit');
-          const limit = pLimit(1);
+
+          // Gentle delay between requests (avoid Cloudflare)
+          const sleep = ms => new Promise(r => setTimeout(r, ms));
 
           const today = new Date();
           const RANGE_DAYS = 60;
@@ -31,84 +32,91 @@ jobs:
 
           const writeCSV = (rows, path) => {
             try {
-              const csv = Papa.unparse(rows, { quotes: true });
+              const csv = Papa.unparse(rows || [], { quotes: true });
               fs.writeFileSync(path, csv);
             } catch (e) {
               console.error('writeCSV error for', path, e?.message);
+              try { fs.writeFileSync(path, ''); } catch {}
             }
           };
 
           (async () => {
             let todays = [];
-            let stats = [];
+            let stats  = [];
 
-            // 1) Today’s matches
+            // 1) Today’s matches (safe even if it fails)
             try {
               const matchesAll = await HLTV.getMatches();
-              todays = matchesAll.filter(m => m.date && new Date(m.date).toDateString() === today.toDateString());
+              todays = (matchesAll || []).filter(m => m?.date && new Date(m.date).toDateString() === today.toDateString());
               fs.writeFileSync('hltv_matches_today.json', JSON.stringify(todays, null, 2));
             } catch (e) {
               console.error('getMatches failed:', e?.message);
               fs.writeFileSync('hltv_matches_today.json', JSON.stringify([], null, 2));
             }
 
-            // 2) Teams → players → player stats (last 60d)
+            // 2) Teams → players → player stats (last 60d), fully sequential + small sleeps
             try {
               const teamIds = [...new Set(todays.flatMap(m => [m.team1?.id, m.team2?.id]).filter(Boolean))];
-              const teamDetails = await Promise.all(
-                teamIds.map(id =>
-                  limit(() =>
-                    HLTV.getTeam({ id }).catch(err => {
-                      console.error('getTeam fail', id, err?.message);
-                      return { players: [] };
-                    })
-                  )
-                )
-              );
-              const playerIds = [...new Set(teamDetails.flatMap(t => t.players?.map(p => p.id)).filter(Boolean))];
+              const teamDetails = [];
+              for (const id of teamIds) {
+                try {
+                  const t = await HLTV.getTeam({ id });
+                  teamDetails.push(t || { players: [] });
+                  await sleep(350);  // be gentle
+                } catch (e) {
+                  console.error('getTeam fail', id, e?.message);
+                }
+              }
+
+              const playerIds = [...new Set(teamDetails.flatMap(t => (t.players||[]).map(p => p.id)).filter(Boolean))];
 
               const startDate = fmt(since), endDate = fmt(today);
               for (const pid of playerIds) {
                 try {
-                  const stat = await limit(() => HLTV.getPlayerStats({ id: pid, startDate, endDate }));
+                  const stat = await HLTV.getPlayerStats({ id: pid, startDate, endDate });
                   stats.push({
                     playerId: pid,
                     nickname: stat?.player?.nickname,
-                    team: stat?.team?.name,
-                    maps: stat?.overview?.mapsPlayed,
-                    kpr: stat?.overview?.kpr,
-                    hsPct: stat?.overview?.hsPercentage,
-                    adr: stat?.overview?.adr,
-                    rating: stat?.overview?.rating1
+                    team:     stat?.team?.name,
+                    maps:     stat?.overview?.mapsPlayed,
+                    kpr:      stat?.overview?.kpr,
+                    hsPct:    stat?.overview?.hsPercentage,
+                    adr:      stat?.overview?.adr,
+                    rating:   stat?.overview?.rating1
                   });
-                } catch(e) {
+                } catch (e) {
                   console.error('getPlayerStats fail', pid, e?.message);
                 }
+                await sleep(350);    // be gentle
               }
             } catch (e) {
               console.error('Team/Player pipeline failed:', e?.message);
             }
 
-            // 3) Save player form (may be empty if HLTV blocked)
+            // 3) Save player form (may be empty)
             writeCSV(stats, 'hltv_player_form.csv');
 
-            // 4) Conservative projections (no UD join here)
+            // 4) Conservative projections (no UD join)
             try {
-              const shrink = (rate, n, base, k) => ((n*rate + k*base)/(n+k));
-              const leagueKPR = 0.68, leagueHS = 0.46;   // conservative baselines
+              const shrink = (rate, n, base, k) => ((n*rate + k*base)/(n+k || 1));
+              const leagueKPR = 0.68, leagueHS = 0.46; // conservative baselines
               const out = [];
+
               for (const r of stats) {
                 const maps = +r.maps || 0;
                 const kpr  = +r.kpr  || leagueKPR;
                 const hs   = +r.hsPct || leagueHS;
-                // heavier regression when sample is small
+
+                // heavier regression for small samples/new teams
                 const kprAdj = shrink(kpr, maps, leagueKPR, maps < 25 ? 40 : 25);
                 const hsAdj  = shrink(hs,  maps, leagueHS,  maps < 25 ? 60 : 40);
-                // balanced series ≈ 50 rounds over Maps 1+2 (MR12)
+
+                // Balanced series ≈ 50 rounds over Maps 1+2 (MR12); we’ll keep it conservative
                 const muKills = 50 * kprAdj;
+
                 out.push({
                   player: r.nickname,
-                  team: r.team,
+                  team:   r.team,
                   maps,
                   kprAdj: +kprAdj.toFixed(3),
                   hsAdj:  +hsAdj.toFixed(3),
@@ -116,6 +124,7 @@ jobs:
                   projHS:    +(muKills*hsAdj).toFixed(1)
                 });
               }
+
               writeCSV(out, 'hltv_projections.csv');
               console.log(`Wrote ${out.length} rows to hltv_projections.csv`);
             } catch (e) {
@@ -127,7 +136,8 @@ jobs:
             try { fs.writeFileSync('hltv_matches_today.json', JSON.stringify([], null, 2)); } catch {}
             try { fs.writeFileSync('hltv_player_form.csv', ''); } catch {}
             try { fs.writeFileSync('hltv_projections.csv', ''); } catch {}
-            process.exitCode = 0; // do not fail the job
+            // do not fail the job
+            process.exitCode = 0;
           });
           JS
 
