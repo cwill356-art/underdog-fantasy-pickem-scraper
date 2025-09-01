@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       ud_csv_path:
-        description: "Path to your Underdog CSV in the repo (e.g., data/underdog_props_esports.csv)"
+        description: "Path to your Underdog CSV (committed in this repo)"
         required: true
         default: "underdog_props_esports.csv"
       lookback_days:
@@ -23,6 +23,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Show repo tree (helps confirm CSV path)
+        run: |
+          echo "== Repo tree =="
+          find . -maxdepth 3 -type f | sed 's|^\./||' | sort
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -50,12 +55,11 @@ jobs:
           const impliedProb = (dec) => (isFinite(dec) && dec>0 ? 1/dec : 0.526);
           const shrink = (rate, n, base, k) => ((n*rate + k*base) / ((n+k)||1));
 
-          // erf polyfill (so we don't rely on Math.erf support)
+          // erf polyfill
           function erf(x){
-            // Abramowitz-Stegun approximation
             const sign = x < 0 ? -1 : 1;
             x = Math.abs(x);
-            const a1= 0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+            const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
             const t = 1/(1+p*x);
             const y = 1 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*Math.exp(-x*x);
             return sign*y;
@@ -81,21 +85,31 @@ jobs:
             }
           };
 
-          // ================== Main ==================
           (async () => {
             const UD_CSV_PATH   = process.env.UD_CSV_PATH || 'underdog_props_esports.csv';
             const LOOKBACK_DAYS = parseInt(process.env.LOOKBACK_DAYS||'60',10);
             const THROTTLE_MS   = parseInt(process.env.THROTTLE_MS  ||'350',10);
 
-            // Baselines (conservative, small-sample safe)
+            // Baselines (conservative)
             const leagueKPR = 0.68, leagueHS = 0.46;
-            const EXPECTED_ROUNDS = 50; // Maps 1+2, MR12, balanced match
+            const EXPECTED_ROUNDS = 50; // Maps 1+2 baseline (MR12)
+
+            // Confirm CSV exists
+            if (!fs.existsSync(UD_CSV_PATH)) {
+              console.error('UD_CSV_PATH not found:', UD_CSV_PATH);
+              // Still emit empty artifacts for debugging
+              writeCSV([], 'hl_players_mapped.csv');
+              writeCSV([], 'hltv_player_form.csv');
+              writeCSV([], 'hltv_projections.csv');
+              writeCSV([], 'ud_vs_model_edges.csv');
+              return;
+            }
 
             const today = new Date();
             const startDate = new Date(today.getTime() - LOOKBACK_DAYS*24*3600*1000).toISOString().slice(0,10);
             const endDate   = today.toISOString().slice(0,10);
 
-            // 1) Load your UD CSV
+            // 1) Load UD CSV
             const udRaw = readCSVauto(UD_CSV_PATH);
             console.log('UD rows found:', udRaw.length, 'from', UD_CSV_PATH);
 
@@ -104,7 +118,7 @@ jobs:
               return '';
             };
 
-            // Extract based on your file: player, market, side, decimal_price; numeric line from selection_subheader
+            // Parse your schema: `player`, `market`, `side`, `decimal_price`; numeric line from `selection_subheader`
             const udClean = udRaw.map(r => {
               const player = String(pickCol(r, ['player','full_name','name','selection_header'])).trim();
               const market = String(pickCol(r, ['market','stat_name','category'])).trim();
@@ -129,7 +143,7 @@ jobs:
               return;
             }
 
-            // Only CS2 markets we model now
+            // CS2 markets we handle
             const csRows = udClean.filter(x => {
               const m = x.market.toLowerCase();
               return m.includes('kills_on_maps_1_2') || m.includes('headshots_on_maps_1_2');
@@ -201,17 +215,15 @@ jobs:
             writeCSV(stats, 'hltv_player_form.csv');
 
             // 4) Projections
-            const leagueKPR = 0.68, leagueHS = 0.46;
-            const EXPECTED_ROUNDS = 50;
             const pf = new Map(stats.map(r => [norm(r.nickname), r]));
             const projRows = [];
             for (const r of stats) {
               const maps = +r.maps || 0;
-              const kpr  = +r.kpr  || leagueKPR;
-              const hs   = +r.hsPct || leagueHS;
-              const kprAdj = shrink(kpr, maps, leagueKPR, maps < 25 ? 40 : 25);
-              const hsAdj  = shrink(hs,  maps, leagueHS,  maps < 25 ? 60 : 40);
-              const muKills = EXPECTED_ROUNDS * kprAdj;
+              const kpr  = +r.kpr  || 0.68;
+              const hs   = +r.hsPct || 0.46;
+              const kprAdj = shrink(kpr, maps, 0.68, maps < 25 ? 40 : 25);
+              const hsAdj  = shrink(hs,  maps, 0.46, maps < 25 ? 60 : 40);
+              const muKills = 50 * kprAdj;
               projRows.push({
                 player: r.nickname, team: r.team, maps,
                 kprAdj: +kprAdj.toFixed(3), hsAdj: +hsAdj.toFixed(3),
@@ -235,17 +247,17 @@ jobs:
               if (!form) continue;
 
               const maps = +form.maps || 0;
-              const kpr  = +form.kpr  || leagueKPR;
-              const hs   = +form.hsPct || leagueHS;
-              const kprAdj = shrink(kpr, maps, leagueKPR, maps < 25 ? 40 : 25);
-              const hsAdj  = shrink(hs,  maps, leagueHS,  maps < 25 ? 60 : 40);
-              const muKills = EXPECTED_ROUNDS * kprAdj;
+              const kpr  = +form.kpr  || 0.68;
+              const hs   = +form.hsPct || 0.46;
+              const kprAdj = shrink(kpr, maps, 0.68, maps < 25 ? 40 : 25);
+              const hsAdj  = shrink(hs,  maps, 0.46, maps < 25 ? 60 : 40);
+              const muKills = 50 * kprAdj;
 
               let mu, variance;
               const mkt = u.market.toLowerCase();
               if (mkt.includes('kills_on_maps_1_2')) {
                 mu = muKills;
-                variance = EXPECTED_ROUNDS * kprAdj * (1 - kprAdj) + 3.0;
+                variance = 50 * kprAdj * (1 - kprAdj) + 3.0;
               } else if (mkt.includes('headshots_on_maps_1_2')) {
                 mu = muKills * hsAdj;
                 variance = muKills * hsAdj * (1 - hsAdj) + 2.0;
@@ -278,10 +290,9 @@ jobs:
             outEdges.sort((a,b)=> b.edge - a.edge);
             writeCSV(outEdges, 'ud_vs_model_edges.csv');
 
-            console.log(`Done. UD rows: ${udClean.length}, CS rows: ${csRows.length}, mapped IDs: ${withIDs.length}, HLTV stats: ${stats.length}, edges: ${outEdges.length}`);
+            console.log(`Done. UD rows: ${udClean.length}, CS rows: ${csRows.length}, HLTV stats: ${stats.length}, edges: ${outEdges.length}`);
           })().catch(err => {
             console.error('Top-level error:', err?.message);
-            // Always produce artifacts so the job "succeeds" for debugging
             try { fs.writeFileSync('hl_players_mapped.csv', ''); } catch {}
             try { fs.writeFileSync('hltv_player_form.csv', ''); } catch {}
             try { fs.writeFileSync('hltv_projections.csv', ''); } catch {}
