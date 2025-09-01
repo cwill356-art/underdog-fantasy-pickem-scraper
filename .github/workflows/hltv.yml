@@ -1,11 +1,11 @@
-name: HLTV projections from Underdog props
+name: HLTV projections from YOUR Underdog CSV
 on:
   workflow_dispatch:
     inputs:
-      ud_artifact_name:
-        description: "Name of the Underdog artifact to pull"
-        required: false
-        default: "underdog_props_esports"
+      ud_csv_path:
+        description: "Path to your Underdog CSV in the repo (e.g., data/underdog_props_esports.csv)"
+        required: true
+        default: "underdog_props_esports.csv"
       lookback_days:
         description: "HLTV player stats lookback window (days)"
         required: false
@@ -19,8 +19,8 @@ jobs:
   run:
     runs-on: ubuntu-latest
     permissions:
-      actions: read
       contents: read
+
     steps:
       - uses: actions/checkout@v4
 
@@ -32,49 +32,22 @@ jobs:
       - name: Install deps
         run: npm i hltv papaparse
 
-      - name: Download latest Underdog artifact (CSV) by name
+      - name: Build projections from your UD file and join edges
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ART_NAME: ${{ inputs.ud_artifact_name }}
-          REPO: ${{ github.repository }}
-        run: |
-          set -e
-          echo "Finding latest artifact named: $ART_NAME"
-          curl -sS -H "Authorization: Bearer $GH_TOKEN" \
-            "https://api.github.com/repos/$REPO/actions/artifacts?per_page=100" > artifacts.json
-
-          ART_ID=$(jq -r --arg NAME "$ART_NAME" '.artifacts | map(select(.name==$NAME and .expired==false)) | sort_by(.created_at) | last | .id // empty' artifacts.json)
-
-          if [ -z "$ART_ID" ] || [ "$ART_ID" = "null" ]; then
-            echo "No active artifact named '$ART_NAME' found. Creating empty placeholder."
-            mkdir -p ud_artifact && touch ud_artifact/underdog_props_esports.csv
-          else
-            echo "Downloading artifact id: $ART_ID"
-            curl -sSL -H "Authorization: Bearer $GH_TOKEN" \
-              -H "Accept: application/octet-stream" \
-              "https://api.github.com/repos/$REPO/actions/artifacts/$ART_ID/zip" -o ud_artifact.zip
-            mkdir -p ud_artifact
-            unzip -o ud_artifact.zip -d ud_artifact >/dev/null
-          fi
-
-          echo "Artifacts in ud_artifact:"
-          ls -la ud_artifact || true
-
-      - name: Build projections from UD players and join edges
-        env:
+          UD_CSV_PATH: ${{ inputs.ud_csv_path }}
           LOOKBACK_DAYS: ${{ inputs.lookback_days }}
           THROTTLE_MS: ${{ inputs.throttle_ms }}
         run: |
           node - <<'JS'
-          // ---------------- Imports ----------------
-          const { HLTV } = require('hltv');     // official Node wrapper
+          // ================== Imports ==================
+          const { HLTV } = require('hltv');   // official wrapper
           const fs = require('fs');
           const Papa = require('papaparse');
 
-          // Node 20 has global fetch
+          // Node 20: global fetch available
           const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
 
-          // --------------- Helpers -----------------
+          // ================== Helpers ==================
           const writeCSV = (rows, path) => {
             try {
               const csv = Papa.unparse(rows || [], { quotes: true });
@@ -87,58 +60,89 @@ jobs:
           const readCSVauto = (path) => {
             try {
               const txt = fs.readFileSync(path, 'utf8');
-              const parsed = Papa.parse(txt, { header: true });
+              const parsed = Papa.parse(txt, { header: true, skipEmptyLines: true });
               return parsed.data || [];
-            } catch {
+            } catch (e) {
+              console.error('Could not read CSV at', path, e?.message);
               return [];
             }
           };
-          const impliedProb = (dec) => (isFinite(dec) && dec>0 ? 1/dec : 0.526); // default ≈ 1.90
-          const shrink = (rate, n, base, k) => ((n*rate + k*base) / ((n+k)||1));
-          const leagueKPR = 0.68, leagueHS = 0.46;
-          const EXPECTED_ROUNDS = 50; // balanced Maps 1+2 baseline (MR12)
+          const norm = s => String(s||'').toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9_]/g,'');
+          const impliedProb = (dec) => (isFinite(dec) && dec>0 ? 1/dec : 0.526); // default near 1.90
+          const shrink = (rate, n, base, k) => ((n*rate + k*base) / ((n+k)||1)); // conservative shrinkage
 
+          // ================== Config ==================
+          const UD_CSV_PATH   = process.env.UD_CSV_PATH || 'underdog_props_esports.csv';
           const LOOKBACK_DAYS = parseInt(process.env.LOOKBACK_DAYS||'60',10);
           const THROTTLE_MS   = parseInt(process.env.THROTTLE_MS  ||'350',10);
+
+          // Baselines (conservative, small-sample safe)
+          const leagueKPR = 0.68, leagueHS = 0.46;
+          const EXPECTED_ROUNDS = 50; // Maps 1+2, MR12, balanced match
 
           const today = new Date();
           const startDate = new Date(today.getTime() - LOOKBACK_DAYS*24*3600*1000).toISOString().slice(0,10);
           const endDate   = today.toISOString().slice(0,10);
 
-          // --------------- 1) Load UD CSV ----------------
-          // Find the first CSV in ud_artifact/ that looks like UD props
-          const udFiles = fs.existsSync('ud_artifact') ? fs.readdirSync('ud_artifact') : [];
-          const udPath = udFiles.find(f => f.toLowerCase().endsWith('.csv')) ? ('ud_artifact/' + udFiles.find(f => f.toLowerCase().endsWith('.csv'))) : 'ud_artifact/underdog_props_esports.csv';
-          const ud = readCSVauto(udPath);
-          console.log('UD rows found:', ud.length, 'from', udPath);
+          // ================== 1) Load your UD CSV ==================
+          const udRaw = readCSVauto(UD_CSV_PATH);
+          console.log('UD rows found:', udRaw.length, 'from', UD_CSV_PATH);
 
-          // Column helpers
+          // Look up helper for columns present in YOUR file
           const pickCol = (row, keys) => {
             for (const k of keys) if (row.hasOwnProperty(k) && row[k] != null && row[k] !== '') return row[k];
             return '';
           };
 
-          // Extract player names, markets, and odds
-          const udClean = ud.map(r => {
+          // Your file has `player`, `market`, `side`, `decimal_price`, and the numeric line is
+          // embedded inside `selection_subheader` (since `line` is NaN). We'll extract it.
+          const udClean = udRaw.map(r => {
             const player = String(pickCol(r, ['player','full_name','name','selection_header'])).trim();
             const market = String(pickCol(r, ['market','stat_name','category'])).trim();
-            let line = pickCol(r, ['line','stat_value','value']);
-            if (line === '' || line == null) {
+
+            // pull numeric line from selection_subheader (e.g., "Higher 41.5 kills on maps 1+2")
+            let line = pickCol(r, ['line']);
+            if (!(isFinite(parseFloat(line)))) {
               const ss = String(pickCol(r, ['selection_subheader','display'])).toLowerCase();
               const m = /(\d+(?:\.\d+)?)/.exec(ss);
               line = m ? m[1] : '';
             }
+            line = parseFloat(line);
+
             const side = String(pickCol(r, ['side','choice'])).toLowerCase();
             const dec  = parseFloat(pickCol(r, ['decimal_price','decimalodds','decimal_odds']));
-            const us   = pickCol(r, ['american_price','americanodds','american_odds']);
-            return { player, market, line: line!==''?parseFloat(line):NaN, side, dec_odds: isFinite(dec)?dec:1.90, us_odds: us };
+
+            return { player, market, side, line, dec_odds: isFinite(dec)?dec:1.90 };
           }).filter(x => x.player && x.market);
 
-          const playerNames = [...new Set(udClean.map(x => x.player.toLowerCase()))];
-          console.log('Unique UD player names:', playerNames.length);
+          if (!udClean.length) {
+            console.warn('No usable UD rows; writing empty artifacts.');
+            writeCSV([], 'hl_players_mapped.csv');
+            writeCSV([], 'hltv_player_form.csv');
+            writeCSV([], 'hltv_projections.csv');
+            writeCSV([], 'ud_vs_model_edges.csv');
+            process.exit(0);
+          }
 
-          // --------------- 2) Map names -> HLTV IDs via hosted directory ----------------
-          // Pull a broad players list and do exact/loose matching.
+          // Filter to CS2 markets we project today
+          const csRows = udClean.filter(x => {
+            const m = x.market.toLowerCase();
+            return m.includes('kills_on_maps_1_2') || m.includes('headshots_on_maps_1_2');
+          });
+          console.log('CS2 rows to project:', csRows.length);
+
+          // ================== 2) Map UD names -> HLTV IDs ==================
+          // Optional manual overrides: player_aliases.csv (two cols: ud_name,hltv_id)
+          const manualMap = new Map();
+          if (fs.existsSync('player_aliases.csv')) {
+            for (const r of readCSVauto('player_aliases.csv')) {
+              const nm = norm(r.ud_name);
+              const pid = parseInt(r.hltv_id, 10);
+              if (nm && Number.isFinite(pid)) manualMap.set(nm, pid);
+            }
+          }
+
+          // Hosted directory for broad coverage
           let playersDir = [];
           try {
             const res = await fetch('https://hltv-api.vercel.app/api/players', { headers: { 'user-agent': 'github-action-hltv-from-ud' }});
@@ -146,37 +150,38 @@ jobs:
           } catch (e) {
             console.error('Hosted /players fetch failed:', e?.message);
           }
-          // normalize helper
-          const norm = s => String(s||'').toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9_]/g,'');
           const byNick = new Map();
           for (const p of (playersDir||[])) {
             const key = norm(p.nickname || p.name || '');
             if (key) byNick.set(key, p);
           }
 
+          const uniquePlayers = [...new Set(csRows.map(x => x.player))];
           const mapped = [];
-          for (const nm of playerNames) {
-            const key = norm(nm);
-            let m = byNick.get(key);
-            if (!m && byNick.get(nm)) m = byNick.get(nm);
-            if (m) {
-              mapped.push({ ud_name: nm, hltv_id: m.id || m.playerId || m._id, nickname: m.nickname || m.name || nm });
-            } else {
-              mapped.push({ ud_name: nm, hltv_id: null, nickname: null });
+          for (const udName of uniquePlayers) {
+            const key = norm(udName);
+            let hltvId = manualMap.get(key) || null;
+            let nick = null;
+            if (!hltvId) {
+              const rec = byNick.get(key);
+              if (rec) { hltvId = rec.id || rec.playerId || rec._id; nick = rec.nickname || rec.name || udName; }
             }
+            mapped.push({ ud_name: udName, hltv_id: hltvId || '', nickname: nick || udName });
           }
           writeCSV(mapped, 'hl_players_mapped.csv');
-          const withIDs = mapped.filter(x => x.hltv_id);
 
+          const withIDs = mapped.filter(x => String(x.hltv_id).trim() !== '');
           console.log('Mapped to HLTV IDs:', withIDs.length, '/', mapped.length);
 
-          // --------------- 3) Pull HLTV player stats for mapped IDs ----------------
+          // ================== 3) Pull HLTV player stats (last LOOKBACK_DAYS) ==================
           const stats = [];
           for (const m of withIDs) {
             try {
-              const s = await HLTV.getPlayerStats({ id: m.hltv_id, startDate, endDate });
+              const id = parseInt(m.hltv_id, 10);
+              if (!Number.isFinite(id)) continue;
+              const s = await HLTV.getPlayerStats({ id, startDate, endDate });
               stats.push({
-                playerId: m.hltv_id,
+                playerId: id,
                 nickname: s?.player?.nickname || m.nickname || m.ud_name,
                 team:     s?.team?.name || '',
                 maps:     s?.overview?.mapsPlayed,
@@ -188,12 +193,12 @@ jobs:
             } catch (e) {
               console.error('getPlayerStats fail', m.hltv_id, m.ud_name, e?.message);
             }
-            await sleep(parseInt(THROTTLE_MS,10));
+            await sleep(Number.isFinite(THROTTLE_MS) ? THROTTLE_MS : 350);
           }
           writeCSV(stats, 'hltv_player_form.csv');
 
-          // --------------- 4) Build conservative projections ----------------
-          const pf = new Map(stats.map(r => [String(r.nickname||'').toLowerCase(), r]));
+          // ================== 4) Conservative projections ==================
+          const pf = new Map(stats.map(r => [norm(r.nickname), r]));
           const projRows = [];
           for (const r of stats) {
             const maps = +r.maps || 0;
@@ -210,7 +215,7 @@ jobs:
           }
           writeCSV(projRows, 'hltv_projections.csv');
 
-          // --------------- 5) Join vs UD props + probabilities/edges ---------------
+          // ================== 5) Join vs UD props + probabilities/edges ==================
           function tailProbOver(line, mu, variance) {
             const sigma = Math.sqrt(Math.max(variance, 1e-6));
             const z = (line - mu)/sigma;
@@ -220,10 +225,12 @@ jobs:
           }
 
           const outEdges = [];
-          for (const u of udClean) {
-            const nickname = u.player.toLowerCase();
-            const form = pf.get(nickname);
-            if (!form || !isFinite(u.line)) continue;
+          for (const u of csRows) {
+            if (!isFinite(u.line)) continue;
+
+            // try nickname norm match
+            const form = pf.get(norm(u.player));
+            if (!form) continue;
 
             const maps = +form.maps || 0;
             const kpr  = +form.kpr  || leagueKPR;
@@ -236,12 +243,12 @@ jobs:
             const mkt = u.market.toLowerCase();
             if (mkt.includes('kills_on_maps_1_2')) {
               mu = muKills;
-              variance = EXPECTED_ROUNDS * kprAdj * (1 - kprAdj) + 3.0; // cushion
+              variance = EXPECTED_ROUNDS * kprAdj * (1 - kprAdj) + 3.0; // extra cushion
             } else if (mkt.includes('headshots_on_maps_1_2')) {
               mu = muKills * hsAdj;
-              variance = muKills * hsAdj * (1 - hsAdj) + 2.0;          // cushion
+              variance = muKills * hsAdj * (1 - hsAdj) + 2.0;          // extra cushion
             } else {
-              continue; // ignore non-CS2 markets here
+              continue;
             }
 
             const { pOver, pUnder, sigma } = tailProbOver(u.line, mu, variance);
@@ -266,11 +273,10 @@ jobs:
             });
           }
 
-          // Sort best edges first
           outEdges.sort((a,b)=> b.edge - a.edge);
           writeCSV(outEdges, 'ud_vs_model_edges.csv');
 
-          console.log(`Done. UD rows: ${udClean.length}, mapped IDs: ${withIDs.length}, HLTV stats rows: ${stats.length}, edges: ${outEdges.length}`);
+          console.log(`Done. UD rows: ${udClean.length}, CS rows: ${csRows.length}, mapped IDs: ${withIDs.length}, HLTV stats: ${stats.length}, edges: ${outEdges.length}`);
           JS
 
       - name: Upload artifacts
@@ -278,9 +284,8 @@ jobs:
         with:
           name: hltv_from_ud_edges
           path: |
-            artifacts.json
-            ud_artifact.zip
-            ud_artifact/**
+            ${{ inputs.ud_csv_path }}
+            player_aliases.csv
             hl_players_mapped.csv
             hltv_player_form.csv
             hltv_projections.csv
