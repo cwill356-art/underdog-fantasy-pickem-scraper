@@ -1,0 +1,26 @@
+name: Esports-only props
+on:
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: pip install pandas requests
+      - name: Run esports-only scraper
+        run: |
+          python - << 'PY'
+          from underdog_scraper import UnderdogScraper
+          UnderdogScraper().scrape()
+          PY
+          python esports_only.py
+      - name: Upload esports-only CSV
+        uses: actions/upload-artifact@v4
+        with:
+          name: underdog_props_esports
+          path: underdog_props_esports.csv
