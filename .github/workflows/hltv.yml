@@ -33,6 +33,34 @@ jobs:
       - name: Install deps
         run: npm i hltv papaparse
 
+      # ---------- NEW DEBUG STEP ----------
+      - name: Debug CSV presence & preview
+        run: |
+          echo "== Working directory =="
+          pwd
+          echo "== Top-level files =="
+          ls -la
+          echo "== .github/workflows =="
+          ls -la .github/workflows || true
+
+          # Use input path if provided, else try common names at repo root
+          CSV_PATH="${{ inputs.ud_csv_path }}"
+          if [ -z "$CSV_PATH" ]; then
+            if [ -f "underdog_props_esports.csv" ]; then
+              CSV_PATH="underdog_props_esports.csv"
+            elif [ -f "underdog_props_esports 2.csv" ]; then
+              CSV_PATH="underdog_props_esports 2.csv"
+            fi
+          fi
+
+          echo "Resolved CSV_PATH: ${CSV_PATH:-<EMPTY>}"
+          if [ -n "$CSV_PATH" ] && [ -f "$CSV_PATH" ]; then
+            echo "== First 20 lines of $CSV_PATH =="
+            head -n 20 "$CSV_PATH" || true
+          else
+            echo "CSV NOT FOUND at resolved path."
+          fi
+
       - name: Build CS2 projections (ALIASES + fuzzy + HLTV search)
         env:
           UD_CSV_PATH: ${{ inputs.ud_csv_path }}
@@ -51,108 +79,109 @@ jobs:
             .replace(/\s+/g,'')
             .replace(/[^a-z0-9_]/g,'');
 
-          // -------------------- FIXED ALIASES --------------------
+          // ---------- FIXED ALIASES ----------
           const ALIASES = {
-            "adron": null, // TODO: HLTV id for ADRON
-            "aw": null, // TODO: HLTV id for AW
-            "artfr0st": null, // TODO: HLTV id for ArtFr0st
-            "belchonokk": null,
-            "batuuu": null,
-            "brollan": null,
-            "clasia": null,
-            "cypher": null,
-            "callme": null,
-            "chop": null,
-            "chopper": null,
-            "ciocardau": null,
-            "closer": null,
-            "crunchy": null,
-            "cryptic": null,
-            "dgl": null,
-            "dengzoe": null,
-            "drox": null,
-            "elfmelk": null,
-            "fallen": null,
-            "grizz": null,
-            "heavygod": null,
-            "hext": null,
-            "icarus": null,
-            "jambo": null,
-            "jame": null,
-            "jayy2s": null,
-            "jimpphat": null,
-            "johnsm1th": null,
-            "junior": null,
-            "krimz": null,
-            "kscerato": null,
-            "karrigan": 429, // Karrigan
-            "spinx": 16949, // Spinx
-            "sunpayus": 15858, // SunPayus
-            "zywoo": 11893, // ZywOo
-            "blamef": 15165, // blameF
-            "broky": 16555, // broky
-            "donk": 22729, // donk
-            "flamez": 20102, // flameZ
-            "frozen": 7187, // frozen
-            "hunter": 9647, // huNter-
-            "rain": 8183, // rain
-            "ropz": 11816, // ropz
-            "torzsi": 19619, // torzsi
-            "xertion": 20424 // xertioN
+            "adron": null, "aw": null, "artfr0st": null, "belchonokk": null, "batuuu": null,
+            "brollan": null, "clasia": null, "cypher": null, "callme": null, "chop": null,
+            "chopper": null, "ciocardau": null, "closer": null, "crunchy": null, "cryptic": null,
+            "dgl": null, "dengzoe": null, "drox": null, "elfmelk": null, "fallen": null,
+            "grizz": null, "heavygod": null, "hext": null, "icarus": null, "jambo": null,
+            "jame": null, "jayy2s": null, "jimpphat": null, "johnsm1th": null, "junior": null,
+            "krimz": null, "kscerato": null,
+            "karrigan": 429,
+            "spinx": 16949,
+            "sunpayus": 15858,
+            "zywoo": 11893,
+            "blamef": 15165,
+            "broky": 16555,
+            "donk": 22729,
+            "flamez": 20102,
+            "frozen": 7187,
+            "hunter": 9647,
+            "rain": 8183,
+            "ropz": 11816,
+            "torzsi": 19619,
+            "xertion": 20424
           };
 
-          // -------------------- HELPERS --------------------
+          // ---------- helpers ----------
           const impliedProb = (dec) => (isFinite(dec) && dec>0 ? 1/dec : 0.526);
           const shrink = (rate,n,base,k)=>((n*rate+k*base)/((n+k)||1));
           function erf(x){const s=x<0?-1:1;x=Math.abs(x);const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;const t=1/(1+p*x);const y=1-(((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t)*Math.exp(-x*x);return s*y;}
+          const writeCSV = (rows, path) => { try { fs.writeFileSync(path, Papa.unparse(rows||[],{quotes:true})); } catch { fs.writeFileSync(path,''); } };
+          const readCSVauto = (path) => { try { return Papa.parse(fs.readFileSync(path,'utf8'), {header:true,skipEmptyLines:true}).data||[]; } catch { return []; } };
 
-          const writeCSV = (rows, path) => {
-            try { const csv = Papa.unparse(rows || [], { quotes: true }); fs.writeFileSync(path, csv); }
-            catch (e) { fs.writeFileSync(path, ''); }
-          };
-          const readCSVauto = (path) => {
-            try { const txt = fs.readFileSync(path, 'utf8'); return Papa.parse(txt, { header: true }).data; }
-            catch { return []; }
-          };
+          // Try to pick CSV: input path or common names at repo root
+          function resolveCsvPath() {
+            const inPath = (process.env.UD_CSV_PATH||'').trim();
+            if (inPath && fs.existsSync(inPath)) return inPath;
+            if (fs.existsSync('underdog_props_esports.csv')) return 'underdog_props_esports.csv';
+            if (fs.existsSync('underdog_props_esports 2.csv')) return 'underdog_props_esports 2.csv';
+            return '';
+          }
 
-          // -------------------- MAIN --------------------
           (async () => {
-            const csvPath = process.env.UD_CSV_PATH || 'underdog_props_esports.csv';
+            const csvPath = resolveCsvPath();
             const LOOKBACK_DAYS = parseInt(process.env.LOOKBACK_DAYS||'60',10);
             const THROTTLE_MS   = parseInt(process.env.THROTTLE_MS||'350',10);
-            const leagueKPR = 0.68, leagueHS = 0.46, EXPECTED_ROUNDS = 50;
+            const EXPECTED_ROUNDS = 50;
 
-            if (!fs.existsSync(csvPath)) {
-              console.error("CSV not found:", csvPath);
+            if (!csvPath) {
+              console.error("CSV not found (input path empty or file missing).");
+              writeCSV([], 'ud_vs_model_edges.csv');
+              return;
+            }
+            console.log("Using CSV:", csvPath);
+
+            // parse UD CSV (tolerant to column names)
+            const udRaw = readCSVauto(csvPath);
+            const pick = (r,k)=>{ for(const key of k) if (r.hasOwnProperty(key)&&r[key]!=null&&String(r[key])!=='') return r[key]; return ''; };
+            const rows = udRaw.map(r=>{
+              const player = String(pick(r,['player','Player','selection_header','name','full_name'])).trim();
+              const sport  = String(pick(r,['sport_name','sport'])).trim();
+              const market = String(pick(r,['market','stat_name','category'])).trim();
+              let line = pick(r,['line','stat_value','value']);
+              if (!(isFinite(parseFloat(line)))) {
+                const ss = String(pick(r,['selection_subheader','display'])).toLowerCase();
+                const m = /(\d+(?:\.\d+)?)/.exec(ss);
+                line = m ? m[1] : '';
+              }
+              const dec  = parseFloat(pick(r,['decimal_price','decimalodds','decimal_odds']));
+              const side = String(pick(r,['side','choice'])).toLowerCase();
+              return { player, sport, market, line: parseFloat(line), dec_odds: isFinite(dec)?dec:1.90, side };
+            }).filter(x=>x.player && x.market && isFinite(x.line));
+
+            // quick log
+            console.log("Total parsed rows:", rows.length);
+            console.log("Sample:", rows.slice(0,5));
+
+            // CS2 only
+            const csRows = rows.filter(x=>{
+              const m = x.market.toLowerCase();
+              const isCS = (String(x.sport||'').toUpperCase()==='CS') || m.includes('kills_on_maps_1_2') || m.includes('headshots_on_maps_1_2');
+              const okMkt = m.includes('kills_on_maps_1_2') || m.includes('headshots_on_maps_1_2');
+              return isCS && okMkt;
+            });
+            console.log("CS2 rows:", csRows.length);
+            if (!csRows.length) {
               writeCSV([], 'ud_vs_model_edges.csv');
               return;
             }
 
-            const ud = readCSVauto(csvPath).map(r => ({
-              player: r.player?.trim(),
-              market: r.market,
-              side: r.side,
-              line: parseFloat(r.line),
-              dec_odds: parseFloat(r.decimal_price)
-            })).filter(x=>x.player && x.market && isFinite(x.line));
-
-            const csRows = ud.filter(x=>/kills_on_maps_1_2|headshots_on_maps_1_2/i.test(x.market));
-            console.log("CS2 rows:", csRows.length);
-
-            // Map players via ALIASES
+            // map via ALIASES only (simple)
             const mapped = csRows.map(r=>{
               const id = Number.isFinite(+ALIASES[norm(r.player)]) ? +ALIASES[norm(r.player)] : null;
               return { ...r, hltv_id:id };
             });
 
-            // Fetch stats
+            // fetch HLTV stats for resolved IDs
             const today = new Date();
             const startDate = new Date(today.getTime() - LOOKBACK_DAYS*86400000).toISOString().slice(0,10);
             const endDate   = today.toISOString().slice(0,10);
             const stats=[];
             for (const m of mapped.filter(x=>x.hltv_id)) {
               try {
-                const s = await HLTV.getPlayerStats({ id:m.hltv_id, startDate, endDate });
+                const s = await HLTV.getPlayerStats({ id: m.hltv_id, startDate, endDate });
                 stats.push({
                   playerId:m.hltv_id,
                   nickname:s?.player?.nickname || m.player,
@@ -168,27 +197,50 @@ jobs:
             }
             writeCSV(stats,'hltv_player_form.csv');
 
-            // Projections + edges
-            const pf=new Map(stats.map(r=>[norm(r.nickname),r]));
-            const edges=[];
-            for(const u of mapped){
-              const f=pf.get(norm(u.player)); if(!f) continue;
-              const maps=+f.maps||0, kpr=+f.kpr||0.68, hs=+f.hsPct||0.46;
-              const kprAdj=shrink(kpr,maps,0.68,maps<25?40:25);
-              const hsAdj=shrink(hs,maps,0.46,maps<25?60:40);
-              const muKills=EXPECTED_ROUNDS*kprAdj;
-              let mu,variance;
-              if(u.market.toLowerCase().includes('kills')){mu=muKills;variance=EXPECTED_ROUNDS*kprAdj*(1-kprAdj)+3;}
-              else {mu=muKills*hsAdj;variance=muKills*hsAdj*(1-hsAdj)+2;}
-              const sigma=Math.sqrt(Math.max(variance,1e-6));
-              const z=(u.line-mu)/sigma;
-              const pOver=1-0.5*(1+erf(z/Math.SQRT2));
-              const modelProb=u.side==='over'?pOver:1-pOver;
-              const edge=modelProb-impliedProb(u.dec_odds);
-              edges.push({player:u.player,team:f.team,market:u.market,side:u.side,ud_line:u.line,our_mu:+mu.toFixed(2),edge:+edge.toFixed(3)});
+            // projections + edges
+            function tailProbOver(line, mu, variance) {
+              const sigma = Math.sqrt(Math.max(variance, 1e-6));
+              const z = (line - mu)/sigma;
+              const pOver = 1 - 0.5*(1+erf(z/Math.SQRT2));
+              return { pOver, pUnder: 1 - pOver, sigma };
             }
+
+            const pf = new Map(stats.map(r=>[norm(r.nickname), r]));
+            const edges=[];
+            for (const u of mapped) {
+              const f = pf.get(norm(u.player));
+              if (!f || !isFinite(u.line)) continue;
+              const maps=+f.maps||0, kpr=+f.kpr||0.68, hs=+f.hsPct||0.46;
+              const kprAdj= (maps||0) ? ((maps*kpr + (maps<25?40:25)*0.68)/((maps+(maps<25?40:25))||1)) : 0.68;
+              const hsAdj = (maps||0) ? ((maps*hs  + (maps<25?60:40)*0.46)/((maps+(maps<25?60:40))||1)) : 0.46;
+              const muKills = 50 * kprAdj;
+
+              let mu, variance;
+              const mkt = u.market.toLowerCase();
+              if (mkt.includes('kills_on_maps_1_2')) {
+                mu = muKills;
+                variance = 50 * kprAdj * (1 - kprAdj) + 3.0;
+              } else if (mkt.includes('headshots_on_maps_1_2')) {
+                mu = muKills * hsAdj;
+                variance = muKills * hsAdj * (1 - hsAdj) + 2.0;
+              } else continue;
+
+              const { pOver, pUnder, sigma } = tailProbOver(u.line, mu, variance);
+              const modelProb = u.side==='over' ? pOver : pUnder;
+              const edge = modelProb - impliedProb(u.dec_odds);
+
+              edges.push({
+                player:u.player, team:f.team||'', market:u.market, side:u.side,
+                ud_line:+u.line, our_mu:+mu.toFixed(2), our_sigma:+sigma.toFixed(2),
+                prob_over:+pOver.toFixed(3), prob_under:+pUnder.toFixed(3),
+                model_prob:+modelProb.toFixed(3), edge:+edge.toFixed(3),
+                sample_maps:f.maps
+              });
+            }
+
             edges.sort((a,b)=>b.edge-a.edge);
             writeCSV(edges,'ud_vs_model_edges.csv');
+            console.log("Edges rows:", edges.length);
           })();
           JS
 
