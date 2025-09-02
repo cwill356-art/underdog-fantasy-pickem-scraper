@@ -14,11 +14,9 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install pandas requests beautifulsoup4 python-dateutil pytz
+          pip install pandas requests beautifulsoup4 python-dateutil pytz unidecode
 
-      # -----------------------------
-      # 1) Run base scraper
-      # -----------------------------
+      # 1) Base scrape -> underdog_props.csv
       - name: Run base scraper (writes underdog_props.csv)
         run: |
           python - << 'PY'
@@ -26,9 +24,7 @@ jobs:
           UnderdogScraper().scrape()
           PY
 
-      # -----------------------------
-      # 2) Filter to esports (LoL + CS2/CSGO + VALORANT + Dota2 + CoD)
-      # -----------------------------
+      # 2) Esport filter (LoL + CS2/CSGO + VALORANT + Dota2 + CoD) -> underdog_props_esports.csv
       - name: Filter to esports (LoL + CS2/CSGO + VALORANT + Dota2 + CoD)
         run: |
           python - << 'PY'
@@ -54,7 +50,7 @@ jobs:
           COL_DEC  = first_col_like(df.columns, ["decimal_price","decimalodds","decimal_odds"])
           COL_PAY  = first_col_like(df.columns, ["payout_multiplier","payout"])
           COL_HDR  = first_col_like(df.columns, ["selection_header","player_header","title","matchup"])
-          COL_SUB  = first_col_like(df.columns, ["selection_subheader","league","subtitle","game"])
+          COL_SUB  = first_col_like(df.columns, ["selection_subheader","league","subtitle","game","matchup"])
           COL_SID  = first_col_like(df.columns, ["sport_id","sportkey","sport_key"])
           COL_SNM  = first_col_like(df.columns, ["sport_name","sport"])
           COL_UPD  = first_col_like(df.columns, ["updated_at","last_updated","modified_at","scraped_at","timestamp"])
@@ -68,11 +64,11 @@ jobs:
           }
 
           NAME_KEYS = {
-            "LOL": ["lol","league of legends","league-of-legends"],
-            "CS" : ["cs2","cs:go","csgo","counter-strike","counter strike"],
-            "VAL": ["val","valorant"],
-            "DOTA":["dota2","dota 2","dota"],
-            "COD":["call of duty","call-of-duty","cod"]
+            "LOL": ["lol","league of legends","league-of-legends","lck","lpl","lec","academy","challengers"],
+            "CS" : ["cs2","cs:go","csgo","counter-strike","counter strike","cct","esea","esl","pro league"],
+            "VAL": ["val","valorant","vct","challengers","masters","ascension"],
+            "DOTA":["dota2","dota 2","dota","the international","dreamleague","riyadh"],
+            "COD":["call of duty","call-of-duty","cod","cdl"]
           }
 
           MARKET_KEYS = {
@@ -155,15 +151,133 @@ jobs:
           print("ROWS:", len(out))
           PY
 
-      - name: Upload esports-only CSV
-        uses: actions/upload-artifact@v4
-        with:
-          name: underdog_props_esports
-          path: underdog_props_esports.csv
+      # 3) Mapper: add team names + refined esport + confidence; make crossref_tasks.csv for low-confidence
+      - name: Write esport_mapper.py
+        run: |
+          cat > esport_mapper.py << 'PY'
+          import re, json
+          import pandas as pd
+          from unidecode import unidecode
 
-      # -----------------------------
-      # 3) Add the Schedule Resolver module
-      # -----------------------------
+          # Hints for refining esport from subheader text
+          LOL_HINTS = ["LCK","LPL","LEC","LLA","PCS","CBLOL","ACADEMY","CHALLENGERS","LEAGUE","LOL"]
+          VAL_HINTS = ["VCT","VALORANT","CHALLENGERS","MASTERS","ASCENSION"]
+          CS_HINTS  = ["ESL","CCT","ESEA","PRO LEAGUE","COUNTER-STRIKE","CS2","CSGO","IEM"]
+          DOTA_HINTS= ["DOTA","TI","INTERNATIONAL","DREAMLEAGUE","RIYADH"]
+          COD_HINTS = ["COD","CALL OF DUTY","CDL"]
+
+          def _norm(s: str) -> str:
+            return re.sub(r"\s+", " ", unidecode((s or "").strip())).strip()
+
+          def _lower(s: str) -> str:
+            return _norm(s).lower()
+
+          def _parse_teams(sub: str):
+            s = _norm(sub)
+            if not s: 
+              return "",""
+            # try common separators
+            for sep in [" vs ", " v ", "@", " - ", " — ", " – "]:
+              if sep in s:
+                left,right = s.split(sep, 1)
+                return left.strip(), right.strip()
+            # fallback: split first hyphen
+            parts = re.split(r"[-–—]", s, maxsplit=1)
+            if len(parts)==2:
+              return parts[0].strip(), parts[1].strip()
+            return s, ""
+
+          def refine_esport(raw_title: str, sub: str, market: str):
+            t = (raw_title or "").upper().strip()
+            hay = f"{sub} {market}".upper()
+            if any(h in hay for h in LOL_HINTS):  return "LOL", 0.9
+            if any(h in hay for h in VAL_HINTS):  return "VAL", 0.9
+            if any(h in hay for h in CS_HINTS):   return "CS",  0.9
+            if any(h in hay for h in DOTA_HINTS): return "DOTA",0.9
+            if any(h in hay for h in COD_HINTS):  return "COD", 0.9
+            # fallback to raw title if it looks like a known tag
+            if t in {"LOL","CS","VAL","DOTA","COD"}:
+              return t, 0.7
+            return "UNKNOWN", 0.0
+
+          def main():
+            df = pd.read_csv("underdog_props_esports.csv")
+            df["player"] = df["player"].fillna("").astype(str)
+            df["market"] = df["market"].fillna("").astype(str)
+            df["selection_subheader"] = df["selection_subheader"].fillna("").astype(str)
+            df["title"] = df["title"].fillna("").astype(str)
+
+            rows = []
+            crossref = []
+            for r in df.to_dict(orient="records"):
+              player = _norm(r.get("player",""))
+              market = _norm(r.get("market",""))
+              sub    = _norm(r.get("selection_subheader",""))
+              raw    = _norm(r.get("title",""))
+
+              esport, conf = refine_esport(raw, sub, market)
+              team1, team2 = _parse_teams(sub)
+
+              # confidence adjustments
+              # if we didn't extract any team names, drop confidence
+              if not team1 and not team2:
+                conf *= 0.6
+              # unknown or very low confidence -> cross-reference task
+              needs = False
+              why = []
+              if esport == "UNKNOWN" or conf < 0.6:
+                needs = True; why.append("Low confidence esport mapping")
+              if not team1 and not team2:
+                needs = True; why.append("No team parsed from subheader")
+              if not player:
+                needs = True; why.append("Missing player name")
+
+              rr = dict(r)
+              rr["team_left"] = team1
+              rr["team_right"] = team2
+              rr["esport_refined"] = esport
+              rr["mapping_confidence"] = round(conf, 2)
+              rows.append(rr)
+
+              if needs:
+                # Build helpful search links the analyst can click
+                base_q = re.sub(r"\s+","+", player or "")
+                search_links = {
+                  "HLTV_player_search": f"https://www.hltv.org/search?query={base_q}" if player else "",
+                  "VLR_player_search":  f"https://www.vlr.gg/search/?q={base_q}" if player else "",
+                  "golgg_player_search":f"https://gol.gg/players/list/season-all/split-all/tournament-ALL/" if player else "",
+                  "Liquipedia_search":  f"https://liquipedia.net/index.php?search={base_q}" if player else "",
+                }
+                crossref.append({
+                  "player": player,
+                  "market": market,
+                  "selection_subheader": sub,
+                  "title_raw": raw,
+                  "team_left": team1,
+                  "team_right": team2,
+                  "esport_refined": esport,
+                  "mapping_confidence": round(conf,2),
+                  "reason": "; ".join(why) if why else "",
+                  **search_links
+                })
+
+            out = pd.DataFrame(rows)
+            out.to_csv("underdog_props_esports_mapped.csv", index=False)
+
+            cr = pd.DataFrame(crossref)
+            cr.to_csv("crossref_tasks.csv", index=False)
+            print(f"Mapped rows: {len(out)}")
+            print(f"Cross-ref tasks: {len(cr)}")
+
+          if __name__ == "__main__":
+            main()
+          PY
+
+      - name: Map teams + esport & create crossref tasks
+        run: |
+          python esport_mapper.py
+
+      # 4) Schedule resolver (HLTV / VLR / gol.gg) to attach start times + not-started flag
       - name: Write schedule_resolver.py
         run: |
           cat > schedule_resolver.py << 'PY'
@@ -174,13 +288,14 @@ jobs:
           from bs4 import BeautifulSoup
           from dateutil import parser as dtp
           import pytz
+          from unidecode import unidecode
 
           TZ_CHICAGO = pytz.timezone("America/Chicago")
 
           def _norm(s: str) -> str:
-            return re.sub(r"\s+", " ", (s or "").strip().lower())
+            return re.sub(r"\s+", " ", unidecode((s or "").strip()))
 
-          def _safe_parse_dt(s: str) -> Optional[datetime]:
+          def _safe_parse_dt(s: str):
             try:
               dt = dtp.parse(s)
               if not dt.tzinfo:
@@ -189,11 +304,10 @@ jobs:
             except Exception:
               return None
 
-          def _now_utc() -> datetime:
+          def _now_utc():
             return datetime.now(timezone.utc)
 
-          # ------------ VALORANT (VLR.gg) ------------
-          def fetch_valorant_schedule() -> List[Dict]:
+          def fetch_valorant_schedule():
             url = "https://www.vlr.gg/matches"
             r = requests.get(url, timeout=25, headers={"User-Agent":"Mozilla/5.0"})
             r.raise_for_status()
@@ -203,8 +317,8 @@ jobs:
               teams = row.select(".match-item-vs-team-name")
               if len(teams) != 2:
                 continue
-              t1 = _norm(teams[0].get_text())
-              t2 = _norm(teams[1].get_text())
+              t1 = _norm(teams[0].get_text()).lower()
+              t2 = _norm(teams[1].get_text()).lower()
               start_utc = None
               ts_el = row.select_one(".moment-tz-convert")
               if ts_el and ts_el.has_attr("data-utc-ts"):
@@ -213,15 +327,10 @@ jobs:
                   start_utc = datetime.fromtimestamp(ts, tz=timezone.utc)
                 except Exception:
                   pass
-              if not start_utc:
-                tt = row.select_one(".match-item-time")
-                if tt:
-                  start_utc = _safe_parse_dt(tt.get_text())
               out.append({"title":"VAL","team1":t1,"team2":t2,"start_utc":start_utc})
             return out
 
-          # ------------ CS2 (HLTV) ------------
-          def fetch_cs2_schedule() -> List[Dict]:
+          def fetch_cs2_schedule():
             url = "https://www.hltv.org/matches"
             r = requests.get(url, timeout=25, headers={"User-Agent":"Mozilla/5.0"})
             r.raise_for_status()
@@ -230,22 +339,21 @@ jobs:
             for m in soup.select(".upcomingMatch, .match-day"):
               names = [t.get_text() for t in m.select(".matchTeamName")]
               if len(names) >= 2:
-                t1, t2 = _norm(names[0]), _norm(names[1])
+                t1, t2 = _norm(names[0]).lower(), _norm(names[1]).lower()
               else:
                 continue
-              ts = None
+              start_utc = None
               holder = m.select_one("[data-unix]")
               if holder and holder.has_attr("data-unix"):
                 try:
                   ts = int(holder["data-unix"]) // 1000
+                  start_utc = datetime.fromtimestamp(ts, tz=timezone.utc)
                 except Exception:
-                  ts = None
-              start_utc = datetime.fromtimestamp(ts, tz=timezone.utc) if ts else None
-              out.append({"title":"CS2","team1":t1,"team2":t2,"start_utc":start_utc})
+                  pass
+              out.append({"title":"CS","team1":t1,"team2":t2,"start_utc":start_utc})
             return out
 
-          # ------------ LoL (gol.gg) ------------
-          def fetch_lol_schedule() -> List[Dict]:
+          def fetch_lol_schedule():
             url = "https://gol.gg/tournament/tournament-matchlist/0/"
             r = requests.get(url, timeout=25, headers={"User-Agent":"Mozilla/5.0"})
             r.raise_for_status()
@@ -255,14 +363,14 @@ jobs:
               cols = row.select("td")
               if len(cols) < 4: 
                 continue
-              t1 = _norm(cols[1].get_text())
-              t2 = _norm(cols[3].get_text())
-              tstr = cols[0].get_text()
+              t1 = _norm(cols[1].get_text()).lower()
+              t2 = _norm(cols[3].get_text()).lower()
+              tstr = _norm(cols[0].get_text())
               start_utc = _safe_parse_dt(tstr)
               out.append({"title":"LOL","team1":t1,"team2":t2,"start_utc":start_utc})
             return out
 
-          def build_schedule_index() -> List[Dict]:
+          def build_schedule_index():
             sched = []
             try: sched += fetch_valorant_schedule()
             except Exception: pass
@@ -270,28 +378,20 @@ jobs:
             except Exception: pass
             try: sched += fetch_lol_schedule()
             except Exception: pass
-            sched = [s for s in sched if s.get("start_utc")]
-            return sched
+            return [s for s in sched if s.get("start_utc")]
 
-          def _teams_from_subheader(sub: str) -> Tuple[str,str]:
-            s = _norm(sub)
-            if " vs " in s:
-              left,right = s.split(" vs ",1)
-            elif " v " in s:
-              left,right = s.split(" v ",1)
-            elif "@" in s:
-              left,right = s.split("@",1)
-            else:
-              parts = re.split(r"[-–—]", s, maxsplit=1)
-              if len(parts)==2:
-                left,right = parts[0], parts[1]
-              else:
-                left,right = s,""
-            left = re.sub(r"(maps?.*)","",left).strip()
-            right = re.sub(r"(maps?.*)","",right).strip()
-            return left, right
+          def _teams_from_subheader(sub: str):
+            s = _norm(sub).lower()
+            for sep in [" vs ", " v ", "@", " - ", " — ", " – "]:
+              if sep in s:
+                left,right = s.split(sep,1)
+                return left.strip(), right.strip()
+            parts = re.split(r"[-–—]", s, maxsplit=1)
+            if len(parts)==2:
+              return parts[0].strip(), parts[1].strip()
+            return s, ""
 
-          def attach_match_times(rows: List[Dict]) -> List[Dict]:
+          def attach_match_times(rows):
             schedule = build_schedule_index()
             out = []
             now = _now_utc()
@@ -300,51 +400,51 @@ jobs:
               t1, t2 = _teams_from_subheader(sub)
               start = None
               for s in schedule:
-                if not s.get("start_utc"): 
-                  continue
                 st1, st2 = s["team1"], s["team2"]
                 if ((t1 and (t1 in st1 or st1 in t1)) and (t2 and (t2 in st2 or st2 in t2))) or \
                    ((t1 and (t1 in st2 or st2 in t1)) and (t2 and (t2 in st1 or st1 in t2))):
                   start = s["start_utc"]; break
-              has_started_utc = (start is not None and now >= start)
-              start_ct = start.astimezone(TZ_CHICAGO) if start else None
-              has_started_ct = (start_ct is not None and datetime.now(TZ_CHICAGO) >= start_ct)
               r2 = dict(r)
               r2["match_start_utc"] = start.isoformat() if start else ""
-              r2["match_start_ct"] = start_ct.isoformat() if start_ct else ""
-              r2["has_started_utc"] = has_started_utc
-              r2["has_started_ct"]  = has_started_ct
-              r2["not_started_ct"]  = not has_started_ct
+              r2["has_started_utc"]  = bool(start and now >= start)
               out.append(r2)
             return out
           PY
 
-      # -----------------------------
-      # 4) Enrich esports file with match times + filter not-started
-      # -----------------------------
-      - name: Enrich with schedules (HLTV / VLR / gol.gg)
+      - name: Enrich with schedules (attach start times + not-started)
         run: |
           python - << 'PY'
           import pandas as pd
           from schedule_resolver import attach_match_times
 
-          SRC = "underdog_props_esports.csv"
-          ENR = "underdog_props_esports_enriched.csv"
-          NST = "underdog_props_esports_not_started.csv"
+          src = "underdog_props_esports_mapped.csv"
+          enr = "underdog_props_esports_enriched.csv"
+          nst = "underdog_props_esports_not_started.csv"
 
-          df = pd.read_csv(SRC)
+          df = pd.read_csv(src)
           rows = df.to_dict(orient="records")
           enriched = attach_match_times(rows)
           out = pd.DataFrame(enriched)
-          out.to_csv(ENR, index=False)
-          out[out["not_started_ct"]==True].to_csv(NST, index=False)
-          print(f"Enriched rows: {len(out)}")
-          print(f"Not-started rows: {len(out[out['not_started_ct']==True])}")
+          out["not_started_ct"] = ~out["has_started_utc"].fillna(False).astype(bool)
+          out.to_csv(enr, index=False)
+          out[out["not_started_ct"]==True].to_csv(nst, index=False)
+          print("Enriched:", len(out))
+          print("Not-started:", out["not_started_ct"].sum())
           PY
 
-      # -----------------------------
-      # 5) Upload artifacts
-      # -----------------------------
+      # 5) Upload artifacts: mapped, crossref tasks, enriched, not-started
+      - name: Upload mapped (teams+esport)
+        uses: actions/upload-artifact@v4
+        with:
+          name: underdog_props_esports_mapped
+          path: underdog_props_esports_mapped.csv
+
+      - name: Upload cross-reference tasks
+        uses: actions/upload-artifact@v4
+        with:
+          name: crossref_tasks
+          path: crossref_tasks.csv
+
       - name: Upload enriched CSV
         uses: actions/upload-artifact@v4
         with:
