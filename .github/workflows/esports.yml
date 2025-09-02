@@ -22,7 +22,7 @@ jobs:
           UnderdogScraper().scrape()
           PY
 
-      - name: Filter to esports (LOL + CS2)
+      - name: Filter to esports (LoL + CS2/CSGO + VALORANT + Dota2 + CoD)
         run: |
           python - << 'PY'
           import re, json
@@ -30,6 +30,7 @@ jobs:
 
           df = pd.read_csv("underdog_props.csv")
 
+          # --- Helpers to discover columns flexibly ---
           def first_col_like(cols, names):
             cols = list(cols)
             for want in names:
@@ -46,86 +47,140 @@ jobs:
           COL_AMER = first_col_like(df.columns, ["american_price","americanodds","american_odds"])
           COL_DEC  = first_col_like(df.columns, ["decimal_price","decimalodds","decimal_odds"])
           COL_PAY  = first_col_like(df.columns, ["payout_multiplier","payout"])
-          COL_HDR  = first_col_like(df.columns, ["selection_header","matchup","player_header","title"])
+          COL_HDR  = first_col_like(df.columns, ["selection_header","player_header","title","matchup"])
           COL_SUB  = first_col_like(df.columns, ["selection_subheader","league","subtitle","game"])
-          COL_SID  = first_col_like(df.columns, ["sport_id","sportkey"])
+          COL_SID  = first_col_like(df.columns, ["sport_id","sportkey","sport_key"])
           COL_SNM  = first_col_like(df.columns, ["sport_name","sport"])
-          COL_UPD  = first_col_like(df.columns, ["updated_at","last_updated","modified_at","scraped_at"])
+          COL_UPD  = first_col_like(df.columns, ["updated_at","last_updated","modified_at","scraped_at","timestamp"])
 
-          ESPORT_ID_VALUES = {"LOL","LEAGUEOFLEGENDS","LEAGUE_OF_LEGENDS","CS","CSGO","CS2","COUNTER_STRIKE"}
-          ESPORT_NAME_KEYS = ["lol","league of legends","league-of-legends","cs2","csgo","cs:go","counter-strike","counter strike"]
+          # --- Title detection dictionaries ---
+          # sport_id (if present) tends to be concise upper tokens; include common variants
+          ESPORT_ID_VALUES = {
+            # League
+            "LOL","LEAGUEOFLEGENDS","LEAGUE_OF_LEGENDS",
+            # Counter-Strike
+            "CS","CS2","CSGO","COUNTER_STRIKE","COUNTER-STRIKE",
+            # VALORANT
+            "VAL","VALORANT",
+            # Dota
+            "DOTA","DOTA2","DOTA_2",
+            # Call of Duty
+            "COD","CALL_OF_DUTY","CALL-OF-DUTY"
+          }
 
-          LOL_KEYS = ["kills","assists","deaths","cs","creep score","kills_on_maps","kills_on_maps_1_2","kills_on_maps_1_2_3","assists_on_maps","deaths_on_maps"]
-          CS_KEYS  = ["kills","headshots","hs","adr","kpr","deaths","kills_on_maps","kills_on_maps_1_2","kills_on_maps_1_2_3"]
+          # sport_name / free-text keys
+          NAME_KEYS = {
+            "LOL": ["lol","league of legends","league-of-legends"],
+            "CS" : ["cs2","cs:go","csgo","counter-strike","counter strike"],
+            "VAL": ["val","valorant"],
+            "DOTA":["dota2","dota 2","dota"],
+            "COD":["call of duty","call-of-duty","cod"]
+          }
 
-          def is_esport_row(row):
-            if COL_SID and pd.notna(row.get(COL_SID, None)):
-              if str(row[COL_SID]).strip().upper() in ESPORT_ID_VALUES:
-                return True
-            if COL_SNM and pd.notna(row.get(COL_SNM, None)):
-              sn = str(row[COL_SNM]).lower()
-              if any(k in sn for k in ESPORT_NAME_KEYS):
-                return True
-            hay = " ".join([str(row.get(COL_HDR,"")).lower(), str(row.get(COL_SUB,"")).lower(), str(row.get(COL_STAT,"")).lower()])
-            return any(k in hay for k in ESPORT_NAME_KEYS)
+          # Market signature keywords per title (lowercase matching)
+          MARKET_KEYS = {
+            "LOL": [
+              "kills","assists","deaths","cs","creep score","fantasy",
+              "kills on maps","assists on maps","deaths on maps"
+            ],
+            "CS": [
+              "kills","headshots","hs","adr","kpr","deaths","fantasy",
+              "kills on maps","headshots on maps"
+            ],
+            "VAL": [
+              "kills","headshots","first blood","fb","plants","defuses",
+              "assists","deaths","fantasy","clutches"
+            ],
+            "DOTA": [
+              "kills","assists","deaths","last hits","lh","denies","gpm","xpm",
+              "fantasy"
+            ],
+            "COD": [
+              "kills","deaths","assists","kda","damage","fantasy",
+              "kills on maps"
+            ]
+          }
 
+          # --- Infer title from any row ---
           def infer_title(row):
-            if COL_SNM and pd.notna(row.get(COL_SNM, None)):
-              s = str(row[COL_SNM]).lower()
-              if "lol" in s or "league" in s: return "LOL"
-              if "cs" in s or "counter" in s: return "CS"
-            hay = " ".join([str(row.get(COL_HDR,"")).lower(), str(row.get(COL_SUB,"")).lower(), str(row.get(COL_STAT,"")).lower()])
-            if "lol" in hay or "league of legends" in hay: return "LOL"
-            if any(k in hay for k in ["cs2","csgo","cs:go","counter"]): return "CS"
-            return ""
+            # 1) Try sport_id
+            if COL_SID:
+              sid = str(row.get(COL_SID,"")).strip().upper()
+              if sid in ESPORT_ID_VALUES:
+                # map coarse id to canonical label
+                if "LOL" in sid or "LEAGUE" in sid: return "LOL"
+                if "CS"  in sid or "COUNTER" in sid: return "CS"
+                if "VAL" in sid: return "VAL"
+                if "DOTA" in sid: return "DOTA"
+                if "COD" in sid or "CALL" in sid: return "COD"
+            # 2) Try sport_name
+            hay = " ".join([str(row.get(COL_SNM,"")),
+                            str(row.get(COL_HDR,"")),
+                            str(row.get(COL_SUB,"")),
+                            str(row.get(COL_STAT,""))]).lower()
+            for title, keys in NAME_KEYS.items():
+              if any(k in hay for k in keys):
+                return title
+            return ""  # unknown / non-esport
 
-          def market_ok(row):
+          # --- Check if this row is one of our esports + has a relevant market for that title ---
+          def is_target_esport_row(row):
+            title = infer_title(row)
+            if not title:
+              return False
             stat = str(row.get(COL_STAT,"")).lower()
-            t = infer_title(row)
-            keys = LOL_KEYS if t=="LOL" else CS_KEYS if t=="CS" else []
-            return any(k in stat for k in keys)
+            # Some scrapers put the stat terms into the subheader/header instead—include them in matching hay
+            hay = " ".join([stat, str(row.get(COL_SUB,"")).lower(), str(row.get(COL_HDR,"")).lower()])
+            keys = MARKET_KEYS.get(title, [])
+            return any(k in hay for k in keys)
 
+          # --- Normalize player name ---
           def norm_player(row):
             name = str(row.get(COL_FULL,"")).strip() if COL_FULL else ""
-            if name and name.lower()!="nan":
+            if name and name.lower() != "nan":
               return name
-            return str(row.get(COL_HDR,"")).strip() if COL_HDR else ""
+            alt = str(row.get(COL_HDR,"")).strip() if COL_HDR else ""
+            return alt
 
           if len(df)==0:
             out = df.iloc[0:0].copy()
           else:
-            mask = df.apply(is_esport_row, axis=1)
-            es = df[mask].copy()
-            out = es[es.apply(market_ok, axis=1)].copy()
+            mask = df.apply(is_target_esport_row, axis=1)
+            out = df[mask].copy()
 
+          # Build tidy output
           if out.empty:
             out = pd.DataFrame(columns=[
-              "player","sport_name","sport_id","market","line","side",
-              "american_price","decimal_price","payout_multiplier",
-              "selection_header","selection_subheader","updated_at"
+              "title","player","market","line","side","american_price","decimal_price",
+              "payout_multiplier","sport_name","sport_id","selection_header",
+              "selection_subheader","updated_at"
             ])
           else:
+            out["title"] = out.apply(infer_title, axis=1)
             out["player"] = out.apply(norm_player, axis=1)
             out = out.assign(
-              sport_name = out[COL_SNM] if COL_SNM in out.columns else "",
-              sport_id   = out[COL_SID] if COL_SID in out.columns else "",
               market     = out[COL_STAT] if COL_STAT in out.columns else "",
               line       = out[COL_LINE] if COL_LINE in out.columns else "",
               side       = out[COL_SIDE] if COL_SIDE in out.columns else "",
               american_price = out[COL_AMER] if COL_AMER in out.columns else "",
               decimal_price  = out[COL_DEC] if COL_DEC in out.columns else "",
               payout_multiplier = out[COL_PAY] if COL_PAY in out.columns else "",
-              selection_header  = out[COL_HDR] if COL_HDR in out.columns else "",
+              sport_name = out[COL_SNM] if COL_SNM in out.columns else "",
+              sport_id   = out[COL_SID] if COL_SID in out.columns else "",
+              selection_header = out[COL_HDR] if COL_HDR in out.columns else "",
               selection_subheader = out[COL_SUB] if COL_SUB in out.columns else "",
               updated_at = out[COL_UPD] if COL_UPD in out.columns else ""
             )[[
-              "player","sport_name","sport_id","market","line","side",
-              "american_price","decimal_price","payout_multiplier",
-              "selection_header","selection_subheader","updated_at"
+              "title","player","market","line","side","american_price","decimal_price",
+              "payout_multiplier","sport_name","sport_id","selection_header",
+              "selection_subheader","updated_at"
             ]]
 
+          # Optional: keep only Higher/Lower style or book odds style (both ok)
+          # out = out[out["side"].str.lower().isin(["higher","lower","over","under"], na=False)]
+
           out.to_csv("underdog_props_esports.csv", index=False)
-          print(json.dumps(out.head(50).to_dict(orient="records"), ensure_ascii=False, indent=2))
+          print(json.dumps(out.head(60).to_dict(orient="records"), ensure_ascii=False, indent=2))
           print("ROWS:", len(out))
           PY
 
