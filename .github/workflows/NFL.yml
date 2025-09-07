@@ -1,4 +1,4 @@
-name: NFL-only props (Underdog)
+name: NFL props (Underdog) — exhaustive
 
 on:
   workflow_dispatch: {}
@@ -15,271 +15,268 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install -q --upgrade pip
-          pip install -q pandas requests beautifulsoup4
+          pip install requests pandas tenacity python-dateutil
 
-      - name: Scrape ALL NFL props from Underdog (writes underdog_props_nfl.csv)
-        env:
-          # optional: set a desktop UA so CDNs return the same payload as the web app
-          UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36
+      - name: Scrape ALL NFL props from Underdog (writes underdog_nfl_props.csv)
         run: |
           python - << 'PY'
-          import json, re, time, sys
+          import json, math, time, re, sys
           from datetime import datetime, timezone
-          from typing import Dict, List, Any, Tuple
-          import requests
+          from dateutil import parser as dtp
           import pandas as pd
-          from bs4 import BeautifulSoup
+          import requests
+          from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-          SESS = requests.Session()
-          SESS.headers.update({
-              "User-Agent":  os.environ.get("UA","Mozilla/5.0"),
-              "Accept":      "application/json,text/html;q=0.9,*/*;q=0.8",
-              "Connection":  "keep-alive",
-          })
+          # ------------------------- config -------------------------
+          UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+          BASES = [
+              "https://api.underdogfantasy.com/beta/v3",  # primary (web app uses these)
+              "https://api.underdogfantasy.com/v1"        # fallback (some installs still mirror here)
+          ]
+          # Some sites expose both "over_under_lines" and "offers" style feeds depending on rollout.
+          ROUTES = [
+              # each tuple: (route, supports_cursor)
+              ("over_under_lines", True),   # typical: ?limit=100&cursor=
+              ("offers", True),             # typical: ?limit=100&cursor=
+              ("over_under_lines_v2", True) # sometimes present in beta
+          ]
 
-          # ----------------------------- helpers -----------------------------
-          def now_iso():
-              return datetime.now(timezone.utc).isoformat()
+          # “NFL-ness” signals we accept (id/name/group strings vary by rollout)
+          NFL_KEYS = {
+              "nfl", "national football league", "football-nfl", "pro football"
+          }
 
-          def jtry(url, params=None) -> Tuple[dict, int]:
-              try:
-                  r = SESS.get(url, params=params, timeout=20)
-                  ct = r.headers.get("Content-Type","")
-                  if "application/json" in ct or r.text.strip().startswith("{"):
-                      return r.json(), r.status_code
-                  # some endpoints return text but are JSON
+          # Markets we consider “NFL props”
+          NFL_MARKET_HINTS = [
+              # QB
+              "passing yards","pass yards","pass attempts","passing attempts","pass completions",
+              "completions","interceptions","ints","passing tds","pass tds",
+              # RB
+              "rushing yards","rush yards","rushing attempts","longest rush","rush tds",
+              # WR/TE
+              "receiving yards","receptions","longest reception","rec tds",
+              # K
+              "field goals made","fg made","kicking points","extra points made",
+              # Defense / misc that sometimes appear
+              "fantasy points","fantasy score","tackles","tackles + assists","tfl","sacks"
+          ]
+
+          SESSION = requests.Session()
+          SESSION.headers.update({"User-Agent": UA, "Accept": "application/json"})
+
+          class SoftFail(Exception): ...
+          def _is_json(r):
+              return "application/json" in r.headers.get("content-type","").lower()
+
+          @retry(reraise=True,
+                 retry=retry_if_exception_type((requests.RequestException, SoftFail)),
+                 wait=wait_exponential(multiplier=0.8, min=1, max=8),
+                 stop=stop_after_attempt(5))
+          def get_json(url, params=None):
+              r = SESSION.get(url, params=params, timeout=20)
+              if r.status_code >= 500:
+                  raise SoftFail(f"Server {r.status_code}")
+              if r.status_code == 429:
+                  # basic backoff on rate-limit
+                  raise SoftFail("429 rate limited")
+              r.raise_for_status()
+              if not _is_json(r):
+                  raise SoftFail("Not JSON response")
+              return r.json()
+
+          def textish(x):
+              return (x or "").strip() if isinstance(x, str) else ""
+
+          def looks_nfl_bucket(s: str) -> bool:
+              s = textish(s).lower()
+              return any(k in s for k in NFL_KEYS)
+
+          def looks_nfl_market(s: str) -> bool:
+              s = textish(s).lower()
+              return any(k in s for k in NFL_MARKET_HINTS)
+
+          def normalize_side(raw: str):
+              s = textish(raw).lower()
+              if s in ("higher","over"): return "Over"
+              if s in ("lower","under"): return "Under"
+              return s.title() if s else ""
+
+          # Grab everything from a base/route pair (cursor pagination if supported).
+          def harvest(base, route, supports_cursor=True, limit=200):
+              url = f"{base}/{route}"
+              cursor = None
+              page = 0
+              while True:
+                  params = {"limit": limit}
+                  if supports_cursor and cursor:
+                      params["cursor"] = cursor
                   try:
-                      return json.loads(r.text), r.status_code
-                  except Exception:
-                      return {}, r.status_code
-              except Exception:
-                  return {}, 0
+                      data = get_json(url, params=params)
+                  except Exception as e:
+                      # stop on hard failure of this route; other routes/bases will still run
+                      break
+                  # Heuristic: many Underdog JSONs embed array under 'over_under_lines' or 'offers' or 'data'
+                  items = (data.get("over_under_lines")
+                           or data.get("offers")
+                           or data.get("data")
+                           or data.get("items")
+                           or [])
+                  if not isinstance(items, list):
+                      # try nested common envelope:
+                      items = (data.get("payload", {}).get("items") or [])
+                  yield from items
 
-          def is_nfl_text(s: str) -> bool:
-              s = (s or "").lower()
-              return any(k in s for k in ["nfl", "national football league"])
+                  # cursor styles differ: sometimes 'next_cursor', sometimes 'links' etc.
+                  cursor = data.get("next_cursor") or data.get("meta", {}).get("next_cursor")
+                  page += 1
+                  if not supports_cursor:
+                      break
+                  if not cursor:
+                      break
 
-          def market_is_nfl(record: dict) -> bool:
-              # look across multiple hint fields
-              hay = " ".join(str(record.get(k,"")) for k in [
-                  "sport_name","league","league_name","competition","group","title",
-                  "market","category","selection_header","selection_subheader","team","matchup"
-              ]).lower()
-              return "nfl" in hay
-
-          def norm_float(x):
-              try:
-                  if x is None: return None
-                  if isinstance(x, (int,float)): return float(x)
-                  s = str(x).strip().replace(",","")
-                  if s.lower() in {"-","nan","none",""}: return None
-                  return float(s)
-              except Exception:
-                  return None
-
-          rows: List[Dict[str,Any]] = []
-          sources_log = []
-
-          # ====================== STRATEGY 1: JSON endpoints ======================
-          # We try multiple known/observed endpoints the webapp tends to hit.
-          # If Underdog rotates an endpoint, we still gather from those that respond.
-          json_candidates = [
-              # pick'em over/under lines (v3 beta; often live)
-              ("api_v3_oul", "https://api.underdogfantasy.com/beta/v3/over_under_lines", {}),
-              # sometimes grouped under "pickem" api host
-              ("sports_v3_oul", "https://sports.underdogfantasy.com/beta/v3/over_under_lines", {}),
-              # market groups (to resolve markets/labels)
-              ("api_v3_markets", "https://api.underdogfantasy.com/beta/v3/market_types", {}),
-              # slates sometimes expose sport filters
-              ("api_v3_slates", "https://api.underdogfantasy.com/beta/v3/slates", {}),
-              # legacy odds blob (if present in some regions)
-              ("sports_odds_v1", "https://sports.underdogfantasy.com/v1/odds", {}),
-          ]
-
-          markets_hint = {}  # id -> market name (if we can enrich later)
-
-          def harvest_over_under_lines(blob: dict):
-              count = 0
-              # shape 1: {"over_under_lines":[ ... ]}
-              lines = blob.get("over_under_lines") or blob.get("lines") or []
-              # shape 2: sometimes nested under "data" or "odds"
-              if not lines and isinstance(blob.get("data"), dict):
-                  lines = blob["data"].get("over_under_lines") or blob["data"].get("lines") or []
-              if not lines and isinstance(blob.get("odds"), dict):
-                  lines = blob["odds"].get("over_under_lines") or []
-
-              for item in lines:
-                  # we try to be defensive about keys
-                  sport_name = item.get("sport_name") or item.get("league") or item.get("group") or ""
-                  if not (is_nfl_text(sport_name) or market_is_nfl(item)):
-                      continue  # keep only NFL
-                  # Many shapes store participants & matchups like so:
-                  player = item.get("player_name") or item.get("name") or item.get("title") or ""
-                  team   = item.get("team") or item.get("team_name") or ""
-                  matchup = item.get("matchup") or item.get("game") or item.get("event_name") or ""
-
-                  market = item.get("stat_name") or item.get("market") or item.get("category") or ""
-                  line   = norm_float(item.get("stat_value") or item.get("line") or item.get("value"))
-                  side   = item.get("choice") or item.get("side") or ""
-                  american = item.get("american_price") or item.get("american_odds") or ""
-                  decimal  = item.get("decimal_price")  or item.get("decimal_odds")  or ""
-                  payout   = item.get("payout_multiplier") or item.get("payout") or ""
-                  updated  = item.get("updated_at") or item.get("last_updated") or now_iso()
-
-                  # De-dup key
-                  key = (player, market, line, matchup, side)
-                  rows.append({
-                      "player": player,
-                      "team": team,
-                      "matchup": matchup,
-                      "sport_name": "NFL",
-                      "market": market,
-                      "line": line,
-                      "side": side,
-                      "american_price": american,
-                      "decimal_price": decimal,
-                      "payout_multiplier": payout,
-                      "selection_header": item.get("selection_header",""),
-                      "selection_subheader": item.get("selection_subheader",""),
-                      "updated_at": updated,
-                      "source": "json_over_under_lines"
-                  })
-                  count += 1
-              return count
-
-          # Try candidates
-          for tag, url, params in json_candidates:
-              blob, code = jtry(url, params=params)
-              if code and blob:
-                  before = len(rows)
-                  if tag.endswith("market_types"):
-                      # map market id -> readable name (if present)
-                      mts = blob.get("market_types") or blob.get("data") or []
-                      if isinstance(mts, dict): mts = mts.get("market_types", [])
-                      for mt in mts or []:
-                          markets_hint[str(mt.get("id"))] = mt.get("name") or mt.get("label")
+          def safe_get(obj, *path):
+              for p in path:
+                  if isinstance(obj, dict) and p in obj:
+                      obj = obj[p]
                   else:
-                      cnt = harvest_over_under_lines(blob)
-                      sources_log.append((tag, url, code, cnt))
-                  after = len(rows)
-              else:
-                  sources_log.append((tag, url, code, 0))
+                      return None
+              return obj
 
-          # ====================== STRATEGY 2: HTML (__NEXT_DATA__) ======================
-          # Fallback path scrapes the public NFL board the web app renders.
-          # These pages typically embed a Next.js JSON payload we can parse.
-          html_targets = [
-              "https://underdogfantasy.com/pick-em/higher-lower/nfl",
-              "https://www.underdogfantasy.com/pick-em/higher-lower/nfl",
-          ]
+          rows = []
 
-          def harvest_next_data(soup):
-              # next.js payload is usually in <script id="__NEXT_DATA__">
-              script = soup.find("script", id="__NEXT_DATA__")
-              if not script or not script.string: 
-                  return 0
-              try:
-                  data = json.loads(script.string)
-              except Exception:
-                  return 0
+          # --------------- crawl ---------------
+          for base in BASES:
+              for route, supports_cursor in ROUTES:
+                  try:
+                      for it in harvest(base, route, supports_cursor=supports_cursor):
+                          # Different deployments place essentials in slightly different places.
+                          # We probe multiple “shapes” and accept the first that fits.
+                          #
+                          # Common fields:
+                          # - player: obj["appearance"]["player"]["name"] OR obj["player"]["full_name"]
+                          # - sport/league/group: obj["appearance"]["sport"]["name"] / ["league"]["name"] / ["group"]
+                          # - market name: obj["over_under"]["stat"] OR obj["market"]["name"]
+                          # - line: obj["line"] OR obj["over_under"]["line"]
+                          # - side: obj["choice"] OR obj["pick"]["type"]
+                          # - team/game text often found in headers/subheaders
+                          #
+                          # ------------- extract -------------
+                          appearance = safe_get(it, "appearance") or {}
+                          player_obj = safe_get(appearance, "player") or safe_get(it, "player") or {}
+                          sport_obj  = safe_get(appearance, "sport") or safe_get(it, "sport") or {}
+                          league_obj = safe_get(appearance, "league") or safe_get(it, "league") or {}
+                          group      = textish(safe_get(it, "group") or safe_get(league_obj, "group") or "")
 
-              # We look for any props/markets nested in pageProps or props
-              payload = data
-              for k in ["props","pageProps","__APOLLO_STATE__"]:
-                  if isinstance(payload, dict) and k in payload:
-                      payload = payload[k]
+                          sport_name = textish(safe_get(sport_obj, "name") or safe_get(it, "sport_name") or "")
+                          league_name = textish(safe_get(league_obj, "name") or safe_get(it, "league_name") or "")
+                          # early NFL filter (cheap)
+                          bucket_text = " ".join([sport_name, league_name, group])
+                          if not looks_nfl_bucket(bucket_text):
+                              # some payloads omit names; try stat-market sniffing below
+                              pass
 
-              text = json.dumps(payload).lower()
-              if "nfl" not in text:
-                  return 0
+                          player_name = textish(safe_get(player_obj, "name") or safe_get(player_obj, "full_name") or safe_get(it, "player_name") or "")
+                          market = textish(safe_get(it, "market", "name")
+                                           or safe_get(it, "over_under", "stat")
+                                           or safe_get(it, "stat_type")
+                                           or safe_get(it, "stat_name")
+                                           or safe_get(it, "category"))
+                          line = safe_get(it, "line") or safe_get(it, "over_under", "line") or safe_get(it, "value") or safe_get(it, "stat_value")
+                          side_raw = textish(safe_get(it, "choice") or safe_get(it, "pick", "type") or safe_get(it, "side"))
+                          side = normalize_side(side_raw)
 
-              # Heuristic extraction: collect any objects that look like props
-              def walk(o):
-                  if isinstance(o, dict):
-                      yield o
-                      for v in o.values():
-                          yield from walk(v)
-                  elif isinstance(o, list):
-                      for v in o:
-                          yield from walk(v)
+                          # helpful cosmetic fields
+                          header = textish(safe_get(it, "selection_header") or safe_get(it, "title") or safe_get(it, "player_header"))
+                          sub    = textish(safe_get(it, "selection_subheader") or safe_get(it, "subtitle") or safe_get(it, "matchup"))
+                          updated_at = safe_get(it, "updated_at") or safe_get(it, "modified_at") or safe_get(it, "created_at")
+                          if isinstance(updated_at, (int, float)):
+                              # treat as epoch seconds if it looks like it
+                              try:
+                                  updated_at = datetime.fromtimestamp(updated_at, tz=timezone.utc).isoformat()
+                              except Exception:
+                                  updated_at = ""
 
-              cnt = 0
-              for obj in walk(payload):
-                  # detect a likely prop shape
-                  if not any(k in obj for k in ["player_name","stat_name","market","line","value","matchup","choice"]):
+                          # Reject obviously broken items
+                          if not player_name or not market:
+                              continue
+
+                          # NFL acceptance: bucket OR market looks like NFL prop
+                          if not looks_nfl_bucket(bucket_text) and not looks_nfl_market(market):
+                              continue
+
+                          # force float line when possible
+                          try:
+                              line_num = float(line)
+                          except Exception:
+                              # Sometimes “Yes/No” type markets — keep them if they’re NFL and useful
+                              line_num = None
+
+                          rows.append({
+                              "player": player_name,
+                              "sport_name": sport_name or "NFL",
+                              "league_name": league_name,
+                              "market": market,
+                              "line": line_num if line_num is not None else textish(line),
+                              "side": side,
+                              "selection_header": header,
+                              "selection_subheader": sub,
+                              "updated_at": updated_at,
+                              # Keep raw for debugging/version drift
+                              "_route": route,
+                              "_base": base
+                          })
+                  except Exception:
+                      # If a route explodes, carry on to others
                       continue
-                  if not market_is_nfl(obj):
-                      continue
 
-                  player = obj.get("player_name") or obj.get("name") or obj.get("title") or ""
-                  market = obj.get("stat_name") or obj.get("market") or obj.get("category") or ""
-                  line   = norm_float(obj.get("stat_value") or obj.get("line") or obj.get("value"))
-                  side   = obj.get("choice") or obj.get("side") or ""
-                  team   = obj.get("team") or ""
-                  matchup= obj.get("matchup") or obj.get("game") or ""
-
-                  if not (player and market and line is not None):
-                      continue
-
-                  rows.append({
-                      "player": player,
-                      "team": team,
-                      "matchup": matchup,
-                      "sport_name": "NFL",
-                      "market": market,
-                      "line": line,
-                      "side": side,
-                      "american_price": obj.get("american_price",""),
-                      "decimal_price":  obj.get("decimal_price",""),
-                      "payout_multiplier": obj.get("payout_multiplier",""),
-                      "selection_header": obj.get("selection_header",""),
-                      "selection_subheader": obj.get("selection_subheader",""),
-                      "updated_at": obj.get("updated_at") or now_iso(),
-                      "source": "html_next_data"
-                  })
-                  cnt += 1
-              return cnt
-
-          for url in html_targets:
-              try:
-                  r = SESS.get(url, timeout=20)
-                  soup = BeautifulSoup(r.text, "html.parser")
-                  cnt = harvest_next_data(soup)
-                  sources_log.append(("html", url, r.status_code, cnt))
-              except Exception:
-                  sources_log.append(("html", url, 0, 0))
-
-          # ----------------------------- normalize & save -----------------------------
-          # Deduplicate rows (same player/market/line/side/matchup)
-          if rows:
-              df = pd.DataFrame(rows)
-              df["key"] = (df["player"].str.strip().str.lower() + "|" +
-                           df["market"].str.strip().str.lower() + "|" +
-                           df["line"].astype(str) + "|" +
-                           df["side"].fillna("").str.strip().str.lower() + "|" +
-                           df["matchup"].fillna("").str.strip().str.lower())
-              df = df.drop_duplicates("key").drop(columns=["key"])
-          else:
+          # --------------- tidy & de-dupe ---------------
+          df = pd.DataFrame(rows)
+          if df.empty:
+              # keep schema even if nothing returned
               df = pd.DataFrame(columns=[
-                  "player","team","matchup","sport_name","market","line","side",
-                  "american_price","decimal_price","payout_multiplier",
-                  "selection_header","selection_subheader","updated_at","source"
+                  "player","sport_name","league_name","market","line","side",
+                  "selection_header","selection_subheader","updated_at","_route","_base"
               ])
 
-          df = df.assign(scraped_at_utc=now_iso())
-          df.to_csv("underdog_props_nfl.csv", index=False)
+          # strict nfl filter pass based on market string as a last gate
+          nfl_df = df[df["market"].str.lower().apply(looks_nfl_market)]
+          # normalize market labels a bit
+          def norm_market(s):
+              s = s.lower()
+              s = s.replace("pass ", "passing ").replace("rush ", "rushing ")
+              s = s.replace(" rec ", " receiving ")
+              return " ".join(s.split())
+          if not nfl_df.empty:
+              nfl_df["market"] = nfl_df["market"].apply(norm_market)
 
-          # quick log
-          print("=== SOURCES ===")
-          for tag,url,code,cnt in sources_log:
-              print(f"{tag:18} {code:>3}  {cnt:>5}  {url}")
-          print("TOTAL ROWS:", len(df))
-          print(df.head(25).to_string(index=False))
+          # de-dupe by same (player, market, line, side) preferring the newest updated_at
+          def parse_dt(x):
+              try:
+                  return dtp.parse(str(x))
+              except Exception:
+                  return datetime.min.replace(tzinfo=timezone.utc)
+          if not nfl_df.empty:
+              nfl_df["_ts"] = nfl_df["updated_at"].apply(parse_dt)
+              nfl_df = (
+                  nfl_df.sort_values("_ts", ascending=False)
+                        .drop_duplicates(subset=["player","market","line","side"], keep="first")
+                        .drop(columns=["_ts"])
+              )
+
+          # final ordering
+          cols = ["player","sport_name","league_name","market","line","side",
+                  "selection_header","selection_subheader","updated_at","_route","_base"]
+          for c in cols:
+              if c not in nfl_df.columns: nfl_df[c] = ""
+          nfl_df = nfl_df[cols].reset_index(drop=True)
+
+          nfl_df.to_csv("underdog_nfl_props.csv", index=False)
+          print("ROWS:", len(nfl_df))
+          print(json.dumps(nfl_df.head(40).to_dict(orient="records"), ensure_ascii=False, indent=2))
           PY
 
-      - name: Upload CSV
+      - name: Upload NFL CSV
         uses: actions/upload-artifact@v4
         with:
-          name: underdog_props_nfl
-          path: underdog_props_nfl.csv
+          name: underdog_nfl_props
+          path: underdog_nfl_props.csv
