@@ -2,6 +2,9 @@ name: NFL props (Underdog) — robust harvest
 
 on:
   workflow_dispatch: {}
+  # Optional schedule (uncomment to run every 15 min)
+  # schedule:
+  #   - cron: "*/15 * * * *"
 
 jobs:
   run:
@@ -15,19 +18,17 @@ jobs:
 
       - name: Install deps
         run: |
+          pip install -q --upgrade pip
           pip install -q requests pandas tenacity python-dateutil beautifulsoup4
 
-      - name: Scrape ALL NFL props from Underdog (writes underdog_nfl_props.csv + raw payloads)
+      - name: Scrape raw NFL payloads from Underdog
         run: |
           python - << 'PY'
-          import os, json, re, time
+          import os, json
           from datetime import datetime, timezone
-          from dateutil import parser as dtp
+          import requests
           from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-          import requests, pandas as pd
-          from bs4 import BeautifulSoup
 
-          OUT_CSV = "underdog_nfl_props.csv"
           RAW_DIR = "raw_payloads"
           os.makedirs(RAW_DIR, exist_ok=True)
 
@@ -46,13 +47,6 @@ jobs:
 
           class SoftFail(Exception): ...
 
-          def now_iso(): return datetime.now(timezone.utc).isoformat()
-
-          def save_raw(name: str, content: str|bytes):
-              mode = "wb" if isinstance(content, (bytes,bytearray)) else "w"
-              with open(os.path.join(RAW_DIR, name), mode) as f:
-                  f.write(content)
-
           @retry(reraise=True,
                  retry=retry_if_exception_type((requests.RequestException, SoftFail)),
                  wait=wait_exponential(multiplier=1, min=1, max=8),
@@ -63,14 +57,18 @@ jobs:
                   raise SoftFail(f"{r.status_code}")
               r.raise_for_status()
               if expect_json:
-                  # sometimes JSON comes as text/plain
                   try:
                       return r.json(), r
                   except Exception:
                       raise SoftFail("not json")
               return r.text, r
 
-          # -------- endpoints: hit many, log/save all --------
+          def save_raw(name: str, content: str|bytes):
+              mode = "wb" if isinstance(content, (bytes,bytearray)) else "w"
+              with open(os.path.join(RAW_DIR, name), mode) as f:
+                  f.write(content)
+
+          # Multiple bases/routes to withstand rollout differences
           BASES = [
             "https://api.underdogfantasy.com/beta/v3",
             "https://sports.underdogfantasy.com/beta/v3",
@@ -82,102 +80,7 @@ jobs:
             ("offers", True),
           ]
 
-          rows = []
           hits = []
-
-          def looks_nfl_bucket(s: str) -> bool:
-              s = (s or "").lower()
-              return ("nfl" in s) or ("national football league" in s)
-
-          NFL_MARKET_HINTS = [
-              "passing", "pass yards", "attempts", "completions", "interceptions", "int",
-              "rushing", "rush yards", "rushing attempts", "longest rush",
-              "receiving", "receptions", "longest reception",
-              "touchdowns", "tds", "fantasy", "field goals", "fg made", "kicking points",
-              "tackles", "sacks", "tackles + assists"
-          ]
-          def looks_nfl_market(s: str) -> bool:
-              s = (s or "").lower()
-              return any(k in s for k in NFL_MARKET_HINTS)
-
-          def norm_side(s: str) -> str:
-              s = (s or "").strip().lower()
-              if s in ("higher","over"): return "Over"
-              if s in ("lower","under"): return "Under"
-              return s.title() if s else ""
-
-          def gf(x):
-              try:
-                  return float(x)
-              except Exception:
-                  return None
-
-          def harvest_items(data):
-              # accept several shapes
-              if isinstance(data, dict):
-                  for k in ("over_under_lines","offers","data","items"):
-                      if isinstance(data.get(k), list):
-                          for it in data[k]:
-                              yield it
-              elif isinstance(data, list):
-                  for it in data:
-                      yield it
-
-          def val(obj, *path):
-              for p in path:
-                  if isinstance(obj, dict) and p in obj:
-                      obj = obj[p]
-                  else:
-                      return None
-              return obj
-
-          def as_str(x):
-              return (x if isinstance(x,str) else ("" if x is None else str(x))).strip()
-
-          def parse_payload(tag, payload):
-              count = 0
-              for it in harvest_items(payload):
-                  # try to pull common fields
-                  appearance = val(it, "appearance") or {}
-                  player_obj = val(appearance, "player") or val(it, "player") or {}
-                  sport_obj  = val(appearance, "sport") or val(it, "sport") or {}
-                  league_obj = val(appearance, "league") or val(it, "league") or {}
-
-                  sport_name  = as_str(val(sport_obj,"name") or val(it,"sport_name"))
-                  league_name = as_str(val(league_obj,"name") or val(it,"league_name"))
-                  bucket      = " ".join([sport_name, league_name, as_str(val(it,"group"))])
-
-                  player = as_str(val(player_obj,"name") or val(player_obj,"full_name") or val(it,"player_name") or val(it,"name") or val(it,"title"))
-                  market = as_str(val(it,"market","name") or val(it,"over_under","stat") or val(it,"stat_type") or val(it,"stat_name") or val(it,"category"))
-                  line   = val(it,"line") or val(it,"over_under","line") or val(it,"value") or val(it,"stat_value")
-                  side   = norm_side(as_str(val(it,"choice") or val(it,"pick","type") or val(it,"side")))
-                  header = as_str(val(it,"selection_header") or val(it,"title") or val(it,"player_header"))
-                  sub    = as_str(val(it,"selection_subheader") or val(it,"subtitle") or val(it,"matchup"))
-                  upd    = val(it,"updated_at") or val(it,"modified_at") or val(it,"created_at") or ""
-
-                  # NFL gating: either bucket says NFL OR market looks like NFL
-                  if not (looks_nfl_bucket(bucket) or looks_nfl_market(market)):
-                      continue
-
-                  # require player & market; line can be None for yes/no markets
-                  if not (player and market):
-                      continue
-
-                  line_num = gf(line)
-                  rows.append({
-                      "player": player,
-                      "sport_name": sport_name or "NFL",
-                      "league_name": league_name,
-                      "market": market,
-                      "line": line_num if line_num is not None else as_str(line),
-                      "side": side,
-                      "selection_header": header,
-                      "selection_subheader": sub,
-                      "updated_at": upd,
-                      "_source": tag
-                  })
-                  count += 1
-              return count
 
           # JSON routes with cursor-style pagination
           for base in BASES:
@@ -193,15 +96,15 @@ jobs:
                       try:
                           data, resp = get(url, params=params, expect_json=True)
                           save_raw(f"raw_{route}_{page}.json", resp.text.encode("utf-8"))
-                          got = parse_payload(f"{base}/{route}", data)
-                          total += got
-                          # cursor styles
+                          total += (len(data.get("over_under_lines", [])) +
+                                    len(data.get("offers", [])) +
+                                    (len(data.get("data", [])) if isinstance(data.get("data"), list) else 0) +
+                                    len(data.get("items", [])))
                           cursor = data.get("next_cursor") or data.get("meta",{}).get("next_cursor")
                           page += 1
                           if not use_cursor or not cursor:
                               break
                       except Exception as e:
-                          # save error page (if any)
                           break
                   hits.append((url, total))
 
@@ -214,48 +117,145 @@ jobs:
               try:
                   html, resp = get(u, expect_json=False)
                   save_raw("raw_nfl_board.html", html.encode("utf-8"))
-                  soup = BeautifulSoup(html, "html.parser")
-                  script = soup.find("script", id="__NEXT_DATA__")
-                  if script and script.string:
-                      save_raw("raw_next_data.json", script.string.encode("utf-8"))
-                      payload = json.loads(script.string)
-                      # walk payload for objects that look like props
-                      def walk(x):
-                          if isinstance(x, dict):
-                              yield x
-                              for v in x.values(): yield from walk(v)
-                          elif isinstance(x, list):
-                              for v in x: yield from walk(v)
-                      cnt = 0
-                      for obj in walk(payload):
-                          if not any(k in obj for k in ("player_name","stat_name","market","line","value","matchup","choice")):
-                              continue
-                          # wrap and reuse parser
-                          cnt += parse_payload(f"{u}#__NEXT_DATA__", obj)
-                      hits.append((u, cnt))
               except Exception:
-                  hits.append((u, 0))
-
-          # Build dataframe, dedupe
-          df = pd.DataFrame(rows)
-          if not df.empty:
-              def parse_dt(x):
-                  try: return dtp.parse(str(x))
-                  except: return datetime.min.replace(tzinfo=timezone.utc)
-              df["_ts"] = df["updated_at"].apply(parse_dt)
-              df["_key"] = (df["player"].str.lower().str.strip()+"|"+
-                            df["market"].str.lower().str.strip()+"|"+
-                            df["line"].astype(str)+"|"+
-                            df["side"].str.lower().str.strip())
-              df = (df.sort_values("_ts", ascending=False)
-                      .drop_duplicates("_key")
-                      .drop(columns=["_ts","_key"]))
-          df.to_csv(OUT_CSV, index=False)
+                  pass
 
           print("SOURCES & COUNTS:")
           for (u,c) in hits:
               print(f"{c:5d}  {u}")
-          print("TOTAL ROWS:", 0 if df.empty else len(df))
+          PY
+
+      - name: Normalize NFL props from raw payloads → underdog_nfl_props.csv
+        run: |
+          python - << 'PY'
+          import os, re, json, glob
+          import pandas as pd
+
+          RAW_DIR = "raw_payloads"
+          OUT_CSV = "underdog_nfl_props.csv"
+
+          # ---------- helpers ----------
+          def as_str(x):
+              return (x if isinstance(x, str) else ("" if x is None else str(x))).strip()
+
+          NFL_STAT_HINTS = [
+              "rush", "rushing",
+              "pass", "passing", "completions", "attempts", "interception",
+              "receiv", "reception",
+              "longest reception", "longest rush",
+              "touchdown", "td",
+              "fantasy",
+              "tackle", "tackles", "assists", "sacks",
+              "field goal", "fg", "kicking points"
+          ]
+
+          STAT_TERMS = [
+              "Rushing Yards", "Rush Yards", "Rushing Attempts", "Rush Attempts",
+              "Receiving Yards", "Receptions", "Longest Reception", "Longest Rush",
+              "Passing Yards", "Pass Attempts", "Completions", "Interceptions", "Pass TDs",
+              "Fantasy Points", "Tackles + Assists", "Solo Tackles", "Sacks",
+              "Field Goals Made",
+              "1H Receptions","1H Rec Yards","1Q Receptions","1Q Rec Yards",
+              "Rush + Rec TDs","1H Rush + Rec TDs","1Q Rush + Rec TDs"
+          ]
+
+          def looks_nfl_stat(stat_key: str) -> bool:
+              s = as_str(stat_key).lower()
+              return any(k in s for k in NFL_STAT_HINTS)
+
+          def split_title(title: str):
+              t = as_str(title)
+              for term in sorted(STAT_TERMS, key=len, reverse=True):
+                  if term in t:
+                      name = t.split(term)[0].strip()
+                      return name, term
+              m = re.match(r"^([A-Za-z .'\-]+?)\s+(.*)$", t)
+              if m:
+                  return m.group(1).strip(), m.group(2).strip()
+              return "", ""
+
+          def harvest_items(blob):
+              if isinstance(blob, dict):
+                  for k in ("over_under_lines","offers","data","items"):
+                      if isinstance(blob.get(k), list):
+                          for it in blob[k]:
+                              yield it
+              elif isinstance(blob, list):
+                  for it in blob:
+                      yield it
+
+          rows = []
+          json_files = sorted(glob.glob(os.path.join(RAW_DIR, "raw_over_under_lines_*.json")))
+          json_files += sorted(glob.glob(os.path.join(RAW_DIR, "raw_over_under_lines_v2_*.json")))
+          json_files += sorted(glob.glob(os.path.join(RAW_DIR, "raw_offers_*.json")))
+
+          for jf in json_files:
+              try:
+                  with open(jf, "r", encoding="utf-8") as f:
+                      data = json.load(f)
+              except Exception:
+                  continue
+
+              for it in harvest_items(data):
+                  ou = it.get("over_under", {}) if isinstance(it, dict) else {}
+                  title = as_str(ou.get("title"))
+                  stat_key = as_str(ou.get("appearance_stat", {}).get("stat") or ou.get("stat"))
+                  line = it.get("stat_value") or it.get("non_discounted_stat_value")
+                  updated = as_str(it.get("updated_at") or it.get("modified_at") or it.get("created_at"))
+
+                  player, market = split_title(title)
+                  if not (player and market):
+                      continue
+
+                  if not looks_nfl_stat(stat_key):
+                      continue
+
+                  for opt in (it.get("options") or []):
+                      side_raw = as_str(opt.get("type"))
+                      side = {"higher":"Over","over":"Over","lower":"Under","under":"Under"}.get(side_raw.lower(), side_raw.title())
+                      try:
+                          line_num = float(line)
+                      except Exception:
+                          line_num = line
+                      rows.append({
+                          "player": player,
+                          "market": market,
+                          "stat_key": stat_key.lower(),
+                          "line": line_num,
+                          "side": side,
+                          "updated_at": updated
+                      })
+
+          df = pd.DataFrame(rows, columns=["player","market","stat_key","line","side","updated_at"]).drop_duplicates()
+
+          if not df.empty:
+              df["_key"] = (
+                  df["player"].str.lower().str.strip() + "|" +
+                  df["market"].str.lower().str.strip() + "|" +
+                  df["stat_key"].str.lower().str.strip() + "|" +
+                  df["line"].astype(str) + "|" +
+                  df["side"].str.lower().str.strip()
+              )
+              df = df.sort_values("updated_at", ascending=False).drop_duplicates("_key").drop(columns=["_key"])
+
+          df.to_csv(OUT_CSV, index=False)
+          print("NFL ROWS:", len(df))
+          print(df.head(20).to_string(index=False))
+
+          if len(df) == 0:
+              raise SystemExit("No NFL props parsed from raw payloads. Check raw JSON structure and filters.")
+          PY
+
+      - name: Sanity check rowcount
+        run: |
+          python - << 'PY'
+          import pandas as pd
+          df = pd.read_csv("underdog_nfl_props.csv")
+          n = len(df)
+          print("Rows:", n)
+          # Adjust threshold as you like for game days
+          if n < 100:
+              raise SystemExit(f"Rowcount too low ({n}) — investigate filters or endpoint shape.")
           PY
 
       - name: Upload outputs
