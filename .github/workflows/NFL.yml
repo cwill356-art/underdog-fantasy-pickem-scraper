@@ -1,4 +1,4 @@
-name: NFL props (Underdog) — exhaustive
+name: NFL props (Underdog) — robust harvest
 
 on:
   workflow_dispatch: {}
@@ -15,126 +15,115 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install requests pandas tenacity python-dateutil
+          pip install -q requests pandas tenacity python-dateutil beautifulsoup4
 
-      - name: Scrape ALL NFL props from Underdog (writes underdog_nfl_props.csv)
+      - name: Scrape ALL NFL props from Underdog (writes underdog_nfl_props.csv + raw payloads)
         run: |
           python - << 'PY'
-          import json, math, time, re, sys
+          import os, json, re, time
           from datetime import datetime, timezone
           from dateutil import parser as dtp
-          import pandas as pd
-          import requests
-          from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+          from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
+          import requests, pandas as pd
+          from bs4 import BeautifulSoup
 
-          # ------------------------- config -------------------------
-          UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-          BASES = [
-              "https://api.underdogfantasy.com/beta/v3",  # primary (web app uses these)
-              "https://api.underdogfantasy.com/v1"        # fallback (some installs still mirror here)
-          ]
-          # Some sites expose both "over_under_lines" and "offers" style feeds depending on rollout.
-          ROUTES = [
-              # each tuple: (route, supports_cursor)
-              ("over_under_lines", True),   # typical: ?limit=100&cursor=
-              ("offers", True),             # typical: ?limit=100&cursor=
-              ("over_under_lines_v2", True) # sometimes present in beta
-          ]
+          OUT_CSV = "underdog_nfl_props.csv"
+          RAW_DIR = "raw_payloads"
+          os.makedirs(RAW_DIR, exist_ok=True)
 
-          # “NFL-ness” signals we accept (id/name/group strings vary by rollout)
-          NFL_KEYS = {
-              "nfl", "national football league", "football-nfl", "pro football"
+          UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+          HDRS = {
+            "User-Agent": UA,
+            "Accept": "application/json,text/html;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://underdogfantasy.com/pick-em/higher-lower/nfl",
+            "Origin": "https://underdogfantasy.com",
+            "Connection": "keep-alive",
           }
 
-          # Markets we consider “NFL props”
-          NFL_MARKET_HINTS = [
-              # QB
-              "passing yards","pass yards","pass attempts","passing attempts","pass completions",
-              "completions","interceptions","ints","passing tds","pass tds",
-              # RB
-              "rushing yards","rush yards","rushing attempts","longest rush","rush tds",
-              # WR/TE
-              "receiving yards","receptions","longest reception","rec tds",
-              # K
-              "field goals made","fg made","kicking points","extra points made",
-              # Defense / misc that sometimes appear
-              "fantasy points","fantasy score","tackles","tackles + assists","tfl","sacks"
-          ]
-
-          SESSION = requests.Session()
-          SESSION.headers.update({"User-Agent": UA, "Accept": "application/json"})
+          S = requests.Session()
+          S.headers.update(HDRS)
 
           class SoftFail(Exception): ...
-          def _is_json(r):
-              return "application/json" in r.headers.get("content-type","").lower()
+
+          def now_iso(): return datetime.now(timezone.utc).isoformat()
+
+          def save_raw(name: str, content: str|bytes):
+              mode = "wb" if isinstance(content, (bytes,bytearray)) else "w"
+              with open(os.path.join(RAW_DIR, name), mode) as f:
+                  f.write(content)
 
           @retry(reraise=True,
                  retry=retry_if_exception_type((requests.RequestException, SoftFail)),
-                 wait=wait_exponential(multiplier=0.8, min=1, max=8),
+                 wait=wait_exponential(multiplier=1, min=1, max=8),
                  stop=stop_after_attempt(5))
-          def get_json(url, params=None):
-              r = SESSION.get(url, params=params, timeout=20)
-              if r.status_code >= 500:
-                  raise SoftFail(f"Server {r.status_code}")
-              if r.status_code == 429:
-                  # basic backoff on rate-limit
-                  raise SoftFail("429 rate limited")
+          def get(url, params=None, expect_json=True):
+              r = S.get(url, params=params, timeout=20)
+              if r.status_code in (429,) or r.status_code >= 500:
+                  raise SoftFail(f"{r.status_code}")
               r.raise_for_status()
-              if not _is_json(r):
-                  raise SoftFail("Not JSON response")
-              return r.json()
+              if expect_json:
+                  # sometimes JSON comes as text/plain
+                  try:
+                      return r.json(), r
+                  except Exception:
+                      raise SoftFail("not json")
+              return r.text, r
 
-          def textish(x):
-              return (x or "").strip() if isinstance(x, str) else ""
+          # -------- endpoints: hit many, log/save all --------
+          BASES = [
+            "https://api.underdogfantasy.com/beta/v3",
+            "https://sports.underdogfantasy.com/beta/v3",
+            "https://api.underdogfantasy.com/v1"
+          ]
+          ROUTES = [
+            ("over_under_lines", True),
+            ("over_under_lines_v2", True),
+            ("offers", True),
+          ]
+
+          rows = []
+          hits = []
 
           def looks_nfl_bucket(s: str) -> bool:
-              s = textish(s).lower()
-              return any(k in s for k in NFL_KEYS)
+              s = (s or "").lower()
+              return ("nfl" in s) or ("national football league" in s)
 
+          NFL_MARKET_HINTS = [
+              "passing", "pass yards", "attempts", "completions", "interceptions", "int",
+              "rushing", "rush yards", "rushing attempts", "longest rush",
+              "receiving", "receptions", "longest reception",
+              "touchdowns", "tds", "fantasy", "field goals", "fg made", "kicking points",
+              "tackles", "sacks", "tackles + assists"
+          ]
           def looks_nfl_market(s: str) -> bool:
-              s = textish(s).lower()
+              s = (s or "").lower()
               return any(k in s for k in NFL_MARKET_HINTS)
 
-          def normalize_side(raw: str):
-              s = textish(raw).lower()
+          def norm_side(s: str) -> str:
+              s = (s or "").strip().lower()
               if s in ("higher","over"): return "Over"
               if s in ("lower","under"): return "Under"
               return s.title() if s else ""
 
-          # Grab everything from a base/route pair (cursor pagination if supported).
-          def harvest(base, route, supports_cursor=True, limit=200):
-              url = f"{base}/{route}"
-              cursor = None
-              page = 0
-              while True:
-                  params = {"limit": limit}
-                  if supports_cursor and cursor:
-                      params["cursor"] = cursor
-                  try:
-                      data = get_json(url, params=params)
-                  except Exception as e:
-                      # stop on hard failure of this route; other routes/bases will still run
-                      break
-                  # Heuristic: many Underdog JSONs embed array under 'over_under_lines' or 'offers' or 'data'
-                  items = (data.get("over_under_lines")
-                           or data.get("offers")
-                           or data.get("data")
-                           or data.get("items")
-                           or [])
-                  if not isinstance(items, list):
-                      # try nested common envelope:
-                      items = (data.get("payload", {}).get("items") or [])
-                  yield from items
+          def gf(x):
+              try:
+                  return float(x)
+              except Exception:
+                  return None
 
-                  # cursor styles differ: sometimes 'next_cursor', sometimes 'links' etc.
-                  cursor = data.get("next_cursor") or data.get("meta", {}).get("next_cursor")
-                  page += 1
-                  if not supports_cursor:
-                      break
-                  if not cursor:
-                      break
+          def harvest_items(data):
+              # accept several shapes
+              if isinstance(data, dict):
+                  for k in ("over_under_lines","offers","data","items"):
+                      if isinstance(data.get(k), list):
+                          for it in data[k]:
+                              yield it
+              elif isinstance(data, list):
+                  for it in data:
+                      yield it
 
-          def safe_get(obj, *path):
+          def val(obj, *path):
               for p in path:
                   if isinstance(obj, dict) and p in obj:
                       obj = obj[p]
@@ -142,141 +131,137 @@ jobs:
                       return None
               return obj
 
-          rows = []
+          def as_str(x):
+              return (x if isinstance(x,str) else ("" if x is None else str(x))).strip()
 
-          # --------------- crawl ---------------
-          for base in BASES:
-              for route, supports_cursor in ROUTES:
-                  try:
-                      for it in harvest(base, route, supports_cursor=supports_cursor):
-                          # Different deployments place essentials in slightly different places.
-                          # We probe multiple “shapes” and accept the first that fits.
-                          #
-                          # Common fields:
-                          # - player: obj["appearance"]["player"]["name"] OR obj["player"]["full_name"]
-                          # - sport/league/group: obj["appearance"]["sport"]["name"] / ["league"]["name"] / ["group"]
-                          # - market name: obj["over_under"]["stat"] OR obj["market"]["name"]
-                          # - line: obj["line"] OR obj["over_under"]["line"]
-                          # - side: obj["choice"] OR obj["pick"]["type"]
-                          # - team/game text often found in headers/subheaders
-                          #
-                          # ------------- extract -------------
-                          appearance = safe_get(it, "appearance") or {}
-                          player_obj = safe_get(appearance, "player") or safe_get(it, "player") or {}
-                          sport_obj  = safe_get(appearance, "sport") or safe_get(it, "sport") or {}
-                          league_obj = safe_get(appearance, "league") or safe_get(it, "league") or {}
-                          group      = textish(safe_get(it, "group") or safe_get(league_obj, "group") or "")
+          def parse_payload(tag, payload):
+              count = 0
+              for it in harvest_items(payload):
+                  # try to pull common fields
+                  appearance = val(it, "appearance") or {}
+                  player_obj = val(appearance, "player") or val(it, "player") or {}
+                  sport_obj  = val(appearance, "sport") or val(it, "sport") or {}
+                  league_obj = val(appearance, "league") or val(it, "league") or {}
 
-                          sport_name = textish(safe_get(sport_obj, "name") or safe_get(it, "sport_name") or "")
-                          league_name = textish(safe_get(league_obj, "name") or safe_get(it, "league_name") or "")
-                          # early NFL filter (cheap)
-                          bucket_text = " ".join([sport_name, league_name, group])
-                          if not looks_nfl_bucket(bucket_text):
-                              # some payloads omit names; try stat-market sniffing below
-                              pass
+                  sport_name  = as_str(val(sport_obj,"name") or val(it,"sport_name"))
+                  league_name = as_str(val(league_obj,"name") or val(it,"league_name"))
+                  bucket      = " ".join([sport_name, league_name, as_str(val(it,"group"))])
 
-                          player_name = textish(safe_get(player_obj, "name") or safe_get(player_obj, "full_name") or safe_get(it, "player_name") or "")
-                          market = textish(safe_get(it, "market", "name")
-                                           or safe_get(it, "over_under", "stat")
-                                           or safe_get(it, "stat_type")
-                                           or safe_get(it, "stat_name")
-                                           or safe_get(it, "category"))
-                          line = safe_get(it, "line") or safe_get(it, "over_under", "line") or safe_get(it, "value") or safe_get(it, "stat_value")
-                          side_raw = textish(safe_get(it, "choice") or safe_get(it, "pick", "type") or safe_get(it, "side"))
-                          side = normalize_side(side_raw)
+                  player = as_str(val(player_obj,"name") or val(player_obj,"full_name") or val(it,"player_name") or val(it,"name") or val(it,"title"))
+                  market = as_str(val(it,"market","name") or val(it,"over_under","stat") or val(it,"stat_type") or val(it,"stat_name") or val(it,"category"))
+                  line   = val(it,"line") or val(it,"over_under","line") or val(it,"value") or val(it,"stat_value")
+                  side   = norm_side(as_str(val(it,"choice") or val(it,"pick","type") or val(it,"side")))
+                  header = as_str(val(it,"selection_header") or val(it,"title") or val(it,"player_header"))
+                  sub    = as_str(val(it,"selection_subheader") or val(it,"subtitle") or val(it,"matchup"))
+                  upd    = val(it,"updated_at") or val(it,"modified_at") or val(it,"created_at") or ""
 
-                          # helpful cosmetic fields
-                          header = textish(safe_get(it, "selection_header") or safe_get(it, "title") or safe_get(it, "player_header"))
-                          sub    = textish(safe_get(it, "selection_subheader") or safe_get(it, "subtitle") or safe_get(it, "matchup"))
-                          updated_at = safe_get(it, "updated_at") or safe_get(it, "modified_at") or safe_get(it, "created_at")
-                          if isinstance(updated_at, (int, float)):
-                              # treat as epoch seconds if it looks like it
-                              try:
-                                  updated_at = datetime.fromtimestamp(updated_at, tz=timezone.utc).isoformat()
-                              except Exception:
-                                  updated_at = ""
-
-                          # Reject obviously broken items
-                          if not player_name or not market:
-                              continue
-
-                          # NFL acceptance: bucket OR market looks like NFL prop
-                          if not looks_nfl_bucket(bucket_text) and not looks_nfl_market(market):
-                              continue
-
-                          # force float line when possible
-                          try:
-                              line_num = float(line)
-                          except Exception:
-                              # Sometimes “Yes/No” type markets — keep them if they’re NFL and useful
-                              line_num = None
-
-                          rows.append({
-                              "player": player_name,
-                              "sport_name": sport_name or "NFL",
-                              "league_name": league_name,
-                              "market": market,
-                              "line": line_num if line_num is not None else textish(line),
-                              "side": side,
-                              "selection_header": header,
-                              "selection_subheader": sub,
-                              "updated_at": updated_at,
-                              # Keep raw for debugging/version drift
-                              "_route": route,
-                              "_base": base
-                          })
-                  except Exception:
-                      # If a route explodes, carry on to others
+                  # NFL gating: either bucket says NFL OR market looks like NFL
+                  if not (looks_nfl_bucket(bucket) or looks_nfl_market(market)):
                       continue
 
-          # --------------- tidy & de-dupe ---------------
-          df = pd.DataFrame(rows)
-          if df.empty:
-              # keep schema even if nothing returned
-              df = pd.DataFrame(columns=[
-                  "player","sport_name","league_name","market","line","side",
-                  "selection_header","selection_subheader","updated_at","_route","_base"
-              ])
+                  # require player & market; line can be None for yes/no markets
+                  if not (player and market):
+                      continue
 
-          # strict nfl filter pass based on market string as a last gate
-          nfl_df = df[df["market"].str.lower().apply(looks_nfl_market)]
-          # normalize market labels a bit
-          def norm_market(s):
-              s = s.lower()
-              s = s.replace("pass ", "passing ").replace("rush ", "rushing ")
-              s = s.replace(" rec ", " receiving ")
-              return " ".join(s.split())
-          if not nfl_df.empty:
-              nfl_df["market"] = nfl_df["market"].apply(norm_market)
+                  line_num = gf(line)
+                  rows.append({
+                      "player": player,
+                      "sport_name": sport_name or "NFL",
+                      "league_name": league_name,
+                      "market": market,
+                      "line": line_num if line_num is not None else as_str(line),
+                      "side": side,
+                      "selection_header": header,
+                      "selection_subheader": sub,
+                      "updated_at": upd,
+                      "_source": tag
+                  })
+                  count += 1
+              return count
 
-          # de-dupe by same (player, market, line, side) preferring the newest updated_at
-          def parse_dt(x):
+          # JSON routes with cursor-style pagination
+          for base in BASES:
+              for route, use_cursor in ROUTES:
+                  url = f"{base}/{route}"
+                  cursor = None
+                  total = 0
+                  page = 0
+                  while True:
+                      params = {"limit": 200}
+                      if use_cursor and cursor:
+                          params["cursor"] = cursor
+                      try:
+                          data, resp = get(url, params=params, expect_json=True)
+                          save_raw(f"raw_{route}_{page}.json", resp.text.encode("utf-8"))
+                          got = parse_payload(f"{base}/{route}", data)
+                          total += got
+                          # cursor styles
+                          cursor = data.get("next_cursor") or data.get("meta",{}).get("next_cursor")
+                          page += 1
+                          if not use_cursor or not cursor:
+                              break
+                      except Exception as e:
+                          # save error page (if any)
+                          break
+                  hits.append((url, total))
+
+          # HTML fallback (__NEXT_DATA__)
+          HTML_URLS = [
+            "https://underdogfantasy.com/pick-em/higher-lower/nfl",
+            "https://www.underdogfantasy.com/pick-em/higher-lower/nfl",
+          ]
+          for u in HTML_URLS:
               try:
-                  return dtp.parse(str(x))
+                  html, resp = get(u, expect_json=False)
+                  save_raw("raw_nfl_board.html", html.encode("utf-8"))
+                  soup = BeautifulSoup(html, "html.parser")
+                  script = soup.find("script", id="__NEXT_DATA__")
+                  if script and script.string:
+                      save_raw("raw_next_data.json", script.string.encode("utf-8"))
+                      payload = json.loads(script.string)
+                      # walk payload for objects that look like props
+                      def walk(x):
+                          if isinstance(x, dict):
+                              yield x
+                              for v in x.values(): yield from walk(v)
+                          elif isinstance(x, list):
+                              for v in x: yield from walk(v)
+                      cnt = 0
+                      for obj in walk(payload):
+                          if not any(k in obj for k in ("player_name","stat_name","market","line","value","matchup","choice")):
+                              continue
+                          # wrap and reuse parser
+                          cnt += parse_payload(f"{u}#__NEXT_DATA__", obj)
+                      hits.append((u, cnt))
               except Exception:
-                  return datetime.min.replace(tzinfo=timezone.utc)
-          if not nfl_df.empty:
-              nfl_df["_ts"] = nfl_df["updated_at"].apply(parse_dt)
-              nfl_df = (
-                  nfl_df.sort_values("_ts", ascending=False)
-                        .drop_duplicates(subset=["player","market","line","side"], keep="first")
-                        .drop(columns=["_ts"])
-              )
+                  hits.append((u, 0))
 
-          # final ordering
-          cols = ["player","sport_name","league_name","market","line","side",
-                  "selection_header","selection_subheader","updated_at","_route","_base"]
-          for c in cols:
-              if c not in nfl_df.columns: nfl_df[c] = ""
-          nfl_df = nfl_df[cols].reset_index(drop=True)
+          # Build dataframe, dedupe
+          df = pd.DataFrame(rows)
+          if not df.empty:
+              def parse_dt(x):
+                  try: return dtp.parse(str(x))
+                  except: return datetime.min.replace(tzinfo=timezone.utc)
+              df["_ts"] = df["updated_at"].apply(parse_dt)
+              df["_key"] = (df["player"].str.lower().str.strip()+"|"+
+                            df["market"].str.lower().str.strip()+"|"+
+                            df["line"].astype(str)+"|"+
+                            df["side"].str.lower().str.strip())
+              df = (df.sort_values("_ts", ascending=False)
+                      .drop_duplicates("_key")
+                      .drop(columns=["_ts","_key"]))
+          df.to_csv(OUT_CSV, index=False)
 
-          nfl_df.to_csv("underdog_nfl_props.csv", index=False)
-          print("ROWS:", len(nfl_df))
-          print(json.dumps(nfl_df.head(40).to_dict(orient="records"), ensure_ascii=False, indent=2))
+          print("SOURCES & COUNTS:")
+          for (u,c) in hits:
+              print(f"{c:5d}  {u}")
+          print("TOTAL ROWS:", 0 if df.empty else len(df))
           PY
 
-      - name: Upload NFL CSV
+      - name: Upload outputs
         uses: actions/upload-artifact@v4
         with:
-          name: underdog_nfl_props
-          path: underdog_nfl_props.csv
+          name: underdog_nfl_dump
+          path: |
+            underdog_nfl_props.csv
+            raw_payloads/**
